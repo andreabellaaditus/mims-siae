@@ -13,15 +13,15 @@ steps:
     name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
-            [
-              'beta', 'run', '${_JOB_NAME}',
-              '--image', 'gcr.io/${PROJECT_ID}/${_JOB_NAME}',
-              '--region', '${_REGION}',
-              '--set-env-vars', "BUCKET=${_BUCKET}",
-              '--set-env-vars', "MNT_DIR=${_MNT_DIR}"
-            ]
+      [
+        'beta', 'run', 'deploy', '${_JOB_NAME}',
+        '--image', 'gcr.io/${PROJECT_ID}/${_JOB_NAME}',
+        '--region', '${_REGION}',
+        '--set-env-vars', "BUCKET=${_BUCKET}",
+        '--set-env-vars', "MNT_DIR=${_MNT_DIR}"
+      ]
 images:
-    - "gcr.io/${PROJECT_ID}/${_JOB_NAME}"
+  - "gcr.io/${PROJECT_ID}/${_JOB_NAME}"
 availableSecrets:
   secretManager:
     - versionName: "projects/${_PROJECT_ID_NUMBER}/secrets/${_CONTAINER_PRIVATE_KEY_SECRET_NAME}/versions/latest"
