@@ -10,14 +10,13 @@ RUN apt-get update && \
     libfreetype6-dev \
     libicu-dev \
     libonig-dev \
-    libbcmath-dev
 
 # Enable mod_rewrite
 RUN a2enmod rewrite
 
 # Install PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
-    docker-php-ext-install gd bcmath intl pdo_mysql zip
+    docker-php-ext-install gd pdo_mysql zip
 
 # Set the Apache document root
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
