@@ -1,0 +1,137 @@
+runtime: php
+env: flex
+
+automatic_scaling:
+    min_num_instances: 1
+    max_num_instances: 3
+    cool_down_period_sec: 120
+    cpu_utilization:
+        target_utilization: 0.6
+    target_concurrent_requests: 100
+
+resources:
+    #carico estivo
+    #cpu: 2
+    #memory_gb: 12.6
+    #carico invernale
+    cpu: 1
+    memory_gb: 0.6
+
+handlers:
+  - url: /favicon\.ico
+    static_files: favicon.ico
+    upload: favicon\.ico
+
+  - url: /static
+    static_dir: public
+
+  - url: /.*
+    secure: always
+    redirect_http_response_code: 301
+    script: auto
+
+runtime_config:
+    operating_system: "ubuntu22"
+    runtime_version: "8.3"
+    document_root: public
+    supervisord_conf_addition: additional-supervisord.conf
+
+skip_files:
+    - .env
+    - ^node_modules/.*$
+    - ^vendor/.*$
+    - ^storage/debugbar/.*$
+
+env_variables:
+  APP_NAME: MIMS
+  APP_ENV: local
+  APP_KEY: base64:l85T8yO4a7lI/E+jYwzmWvIZI+L6hPO/bVkVvOcPvTQ=
+  APP_DEBUG: true
+  APP_URL: http://mims-siae.test
+
+  LOG_CHANNEL: stack
+  LOG_DEPRECATIONS_CHANNEL: null
+  LOG_LEVEL: debug
+
+  DB_HOST: 127.0.0.1
+  DB_PORT: 3306
+  DB_DATABASE: mims-2024
+  DB_USERNAME: siae-user
+  DB_PASSWORD: 5]I#'?%_d)':F)^e
+  DB_SOCKET: "/cloudsql/ticketing-siae:europe-west12:mysql-test-siae"
+
+  TICKA_API_URL: "https://mfapi-01.ticka.it/api"
+  TICKA_USERNAME: "User3"
+  TICKA_PASSWORD: "AY2a#GfW!XB4L4@B"
+  TICKA_ADITUS_STORE_ID: 15
+  TICKA_ADITUS_TERMINAL_ID: 53
+  TICKA_ADITUS_OPERATOR_ID: 133
+  PROD_CAT_EVENTS_ID: 7
+  GOOGLE_CLOUD_STORAGE_BUCKET: public-bucket-siae
+
+  DEBUGBAR_ENABLED: true
+  BROADCAST_DRIVER: log
+  CACHE_DRIVER: database
+  FILESYSTEM_DISK: local
+  QUEUE_CONNECTION: sync
+  SESSION_DRIVER: database
+  SESSION_LIFETIME: 120
+
+  MEMCACHED_HOST: 127.0.0.1
+
+  REDIS_HOST: 127.0.0.1
+  REDIS_PASSWORD: null
+  REDIS_PORT: 6379
+
+  MAIL_DRIVER: mailjet
+  MAIL_HOST: in-v3.mailjet.com
+  MAIL_PORT: 587
+  MAIL_USERNAME: df6d9476aaa46eb2b8df7e0112494a68
+  MAIL_PASSWORD: 3a21a8048b959433b341b3e72dc70ec3
+  MAIL_ENCRYPTION: tls
+  MAILJET_APIKEY: df6d9476aaa46eb2b8df7e0112494a68
+  MAILJET_APISECRET: 3a21a8048b959433b341b3e72dc70ec3
+  MAIL_FROM_ADDRESS: "info@aditusculture.com"
+  MAIL_FROM_NAME: "${APP_NAME}"
+  TEST_EMAIL_RECIPIENT: andrea.bella000@gmail.com
+
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  AWS_DEFAULT_REGION: us-east-1
+  AWS_BUCKET:
+  AWS_USE_PATH_STYLE_ENDPOINT: false
+
+  DEFAULT_MAXIMUM_PURCHASABLE_QUANTITY: 6
+  PUSHER_APP_ID:
+  PUSHER_APP_KEY:
+  PUSHER_APP_SECRET:
+  PUSHER_HOST:
+  PUSHER_PORT: 443
+  PUSHER_SCHEME: https
+  PUSHER_APP_CLUSTER: mt1
+
+  VITE_APP_NAME: "${APP_NAME}"
+  VITE_PUSHER_APP_KEY: "${PUSHER_APP_KEY}"
+  VITE_PUSHER_HOST: "${PUSHER_HOST}"
+  VITE_PUSHER_PORT: "${PUSHER_PORT}"
+  VITE_PUSHER_SCHEME: "${PUSHER_SCHEME}"
+  VITE_PUSHER_APP_CLUSTER: "${PUSHER_APP_CLUSTER}"
+
+  GOOGLE_MAPS_LOCALE: it
+  GOOGLE_MAPS_API_KEY: AIzaSyC81ES1MuTfCv5ngv3ikpdIvzWqp9pv7UM
+
+  JWT_SECRET: nAl1IhqhK5qVSKQ64NFVjQ7mC9Ue4r3GUayRhcn8hbEH7b9a558Ael5BeAc7AdzK
+
+  STRIPE_SECRET_KEY: sk_test_I9553WMfP2CB1Iftw4hvXtvS
+  STRIPE_SECRET: sk_test_I9553WMfP2CB1Iftw4hvXtvS
+  STRIPE_PUBLISHABLE_KEY: pk_test_zpxoMV6xtDllrA17VowMuyCN
+  STRIPE_KEY: pk_test_zpxoMV6xtDllrA17VowMuyCN
+  STRIPE_WEBHOOK_SECRET: whsec_Wob6pSKpldtjRgFlSpmb0oSQCaqM2fjz
+
+  STORAGE_DIR: /tmp
+  VIEW_COMPILED_PATH: /tmp
+
+beta_settings:
+    # for Cloud SQL, set this value to the Cloud SQL connection name,
+    # e.g. "project:region:cloudsql-instance"
+    cloud_sql_instances: "ticketing-siae:europe-west12:mysql-test-siae"

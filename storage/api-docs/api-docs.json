@@ -1,0 +1,1459 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "AditusAPI",
+        "version": "1.0"
+    },
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Log in",
+                "description": "User log in",
+                "operationId": "8cb7742ae98d0990acb2907c4e00bf24",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "user@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful login",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "access_token": {
+                                                    "type": "string"
+                                                },
+                                                "token_type": {
+                                                    "type": "string",
+                                                    "example": "bearer"
+                                                },
+                                                "expires_in": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "invalid_credentials"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/cart_products/cart": {
+            "get": {
+                "tags": [
+                    "Cart Products"
+                ],
+                "summary": "Get cart products for the authenticated user",
+                "operationId": "61ba260a54d89a5e5d2da10b3a7394cd",
+                "responses": {
+                    "200": {
+                        "description": "Cart products retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "cart_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "product_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "date_service": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-07-15 10:00:00"
+                                                    },
+                                                    "hour_service": {
+                                                        "type": "string",
+                                                        "example": "10:00"
+                                                    },
+                                                    "holder_last_name": {
+                                                        "type": "string",
+                                                        "example": "Doe"
+                                                    },
+                                                    "holder_first_name": {
+                                                        "type": "string",
+                                                        "example": "John"
+                                                    },
+                                                    "open_ticket": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve cart products",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "Internal Server Error"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "Authentication": []
+                    }
+                ]
+            }
+        },
+        "/api/cart_products/store": {
+            "post": {
+                "tags": [
+                    "Cart Products"
+                ],
+                "summary": "Store cart products for the authenticated user",
+                "operationId": "12079a8c9f5b7602e8f07189b613dc59",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "products": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "date_service": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2024-07-15 10:00:00"
+                                                },
+                                                "hour_service": {
+                                                    "type": "string",
+                                                    "example": "10:00"
+                                                },
+                                                "holder_last_name": {
+                                                    "type": "string",
+                                                    "example": "Doe"
+                                                },
+                                                "holder_first_name": {
+                                                    "type": "string",
+                                                    "example": "John"
+                                                },
+                                                "open_ticket": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cart products stored successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "product_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "date_service": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-07-15 10:00:00"
+                                                    },
+                                                    "hour_service": {
+                                                        "type": "string",
+                                                        "example": "10:00"
+                                                    },
+                                                    "holder_last_name": {
+                                                        "type": "string",
+                                                        "example": "Doe"
+                                                    },
+                                                    "holder_first_name": {
+                                                        "type": "string",
+                                                        "example": "John"
+                                                    },
+                                                    "open_ticket": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to store cart products",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "Internal Server Error"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "Authentication": []
+                    }
+                ]
+            }
+        },
+        "/api/cart_products/{cartProductId}/destroy": {
+            "post": {
+                "tags": [
+                    "Cart Products"
+                ],
+                "summary": "Delete a cart product",
+                "operationId": "e98433cf47383429180018875bb537f9",
+                "parameters": [
+                    {
+                        "name": "cartProductId",
+                        "in": "path",
+                        "description": "ID of the cart product to delete",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cart product deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Cart product not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "Cart product not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to delete cart product",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "Internal Server Error"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "Authentication": []
+                    }
+                ]
+            }
+        },
+        "/api/cart_products/destroy-many": {
+            "post": {
+                "tags": [
+                    "Cart Products"
+                ],
+                "summary": "Delete multiple cart products",
+                "operationId": "fbc2e20572526629402ed460b234dcf2",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cart products deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to delete cart products",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "Internal Server Error"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "Authentication": []
+                    }
+                ]
+            }
+        },
+        "/api/orders/store": {
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Create a new order",
+                "operationId": "9eca5dbaddbdb245cc7405cb3faad0f3",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "lang",
+                                    "terms_and_conditions",
+                                    "invoice"
+                                ],
+                                "properties": {
+                                    "lang": {
+                                        "description": "Language for the payment",
+                                        "type": "string",
+                                        "example": "it"
+                                    },
+                                    "terms_and_conditions": {
+                                        "description": "Must be accepted",
+                                        "type": "boolean"
+                                    },
+                                    "invoice": {
+                                        "description": "Invoice requirement",
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Order created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "description": "Indicates whether the order creation was successful",
+                                            "type": "boolean"
+                                        },
+                                        "status": {
+                                            "description": "Status of the operation",
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "description": "Details of the created order",
+                                            "properties": {
+                                                "order_id": {
+                                                    "description": "ID of the order",
+                                                    "type": "integer"
+                                                },
+                                                "payment_link": {
+                                                    "description": "Payment link",
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "status": {
+                                            "properties": {
+                                                "terms_and_conditions": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "must_be_accepted"
+                                                    }
+                                                },
+                                                "invoice": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "required"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "description": "Error message",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "Authentication": []
+                    }
+                ]
+            }
+        },
+        "/api/orders/history": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Get order history",
+                "operationId": "e61af6ca8fa4271927441a626677bccb",
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Order"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                },
+                "security": [
+                    {
+                        "Authentication": []
+                    }
+                ]
+            }
+        },
+        "/api/orders/{id}/tickets": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Download tickets for a specific order",
+                "operationId": "e1a6d89ad89f321393c6e23a19dad389",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the order",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tickets downloaded successfully",
+                        "content": {
+                            "application/pdf": {}
+                        }
+                    },
+                    "404": {
+                        "description": "Order not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Order not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "Authentication": []
+                    }
+                ]
+            }
+        },
+        "/api/sites": {
+            "get": {
+                "tags": [
+                    "Sites"
+                ],
+                "summary": "Get all sites",
+                "operationId": "8cd61005183359799066c5818fa507e3",
+                "responses": {
+                    "200": {
+                        "description": "Sites retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Sites retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "pole_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "company_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "concession_id": {
+                                                        "type": "integer",
+                                                        "example": null,
+                                                        "nullable": true
+                                                    },
+                                                    "unlock_matrix_pole_id": {
+                                                        "type": "integer",
+                                                        "example": 3
+                                                    },
+                                                    "slug": {
+                                                        "type": "string",
+                                                        "example": "neapolis"
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Parco Archeologico della Neapolis"
+                                                    },
+                                                    "canonical_name": {
+                                                        "type": "string",
+                                                        "example": "parco-archeologico-della-neapolis"
+                                                    },
+                                                    "address": {
+                                                        "type": "string",
+                                                        "example": "Via Paradiso, 14, 96100 Siracusa SR, Italia"
+                                                    },
+                                                    "city": {
+                                                        "type": "string",
+                                                        "example": "Siracusa"
+                                                    },
+                                                    "region": {
+                                                        "type": "string",
+                                                        "example": "Sicilia"
+                                                    },
+                                                    "lat": {
+                                                        "type": "string",
+                                                        "example": "37.0741229"
+                                                    },
+                                                    "lng": {
+                                                        "type": "string",
+                                                        "example": "15.2788834"
+                                                    },
+                                                    "is_comingsoon": {
+                                                        "type": "boolean",
+                                                        "example": false
+                                                    },
+                                                    "is_closed": {
+                                                        "type": "boolean",
+                                                        "example": false
+                                                    },
+                                                    "in_concession": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "matrix_suffix": {
+                                                        "type": "string",
+                                                        "example": "N"
+                                                    },
+                                                    "access_control_enabled": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "poll_enabled": {
+                                                        "type": "boolean",
+                                                        "example": false
+                                                    },
+                                                    "cashier_fee_enabled": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "tvm": {
+                                                        "type": "boolean",
+                                                        "example": false
+                                                    },
+                                                    "onsite_auto_scan": {
+                                                        "type": "boolean",
+                                                        "example": false
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2017-10-09T07:52:45.000000Z"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-05-30T15:25:12.000000Z"
+                                                    },
+                                                    "cod_location_siae": {
+                                                        "type": "string",
+                                                        "example": "1234567687894",
+                                                        "nullable": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve sites",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to retrieve sites: Internal Server Error"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "Authentication": []
+                    }
+                ]
+            }
+        },
+        "/api/services/{product_category}/{site?}": {
+            "get": {
+                "tags": [
+                    "Services"
+                ],
+                "summary": "Get list of active services",
+                "operationId": "f8816185d79bddfa179b9a63730322c1",
+                "parameters": [
+                    {
+                        "name": "product_category",
+                        "in": "path",
+                        "description": "Slug of the product category",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "site",
+                        "in": "path",
+                        "description": "Slug of the site",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of services retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Services retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Service Name"
+                                                    },
+                                                    "description": {
+                                                        "type": "string",
+                                                        "example": "Service Description"
+                                                    },
+                                                    "site_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "slug": {
+                                                        "type": "string",
+                                                        "example": "service-name"
+                                                    },
+                                                    "is_siae": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "site": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Site Name"
+                                                            },
+                                                            "address": {
+                                                                "type": "string",
+                                                                "example": "Site Address"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve services",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to retrieve services: Internal Server Error"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "Authentication": []
+                    }
+                ]
+            }
+        },
+        "/api/services/{slug}/{type}/products": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get products for a specific service and type",
+                "operationId": "daf1055e60d6a5d92da8fb59aa20fca5",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "description": "Slug of the service",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "path",
+                        "description": "Type of user receiving the products (customers, travel-agencies, schools)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "is_siae",
+                        "in": "query",
+                        "description": "Filter products based on the is_siae field. Default is 0.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 0
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Products retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Data retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "service": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "Service Name"
+                                                        },
+                                                        "description": {
+                                                            "type": "string",
+                                                            "example": "Service Description"
+                                                        },
+                                                        "slug": {
+                                                            "type": "string",
+                                                            "example": "service-slug"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "products": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Product Name"
+                                                            },
+                                                            "price_sale": {
+                                                                "type": "string",
+                                                                "example": "123.45"
+                                                            },
+                                                            "cod_ordine_posto": {
+                                                                "type": "string",
+                                                                "example": "ABCDE"
+                                                            },
+                                                            "cod_riduzione_siae": {
+                                                                "type": "string",
+                                                                "example": "12345"
+                                                            },
+                                                            "is_siae": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "reductions": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "integer",
+                                                                            "example": 1
+                                                                        },
+                                                                        "name": {
+                                                                            "type": "string",
+                                                                            "example": "Reduction Name"
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                }
+                                                            },
+                                                            "reduction_fields": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "integer",
+                                                                            "example": 1
+                                                                        },
+                                                                        "name": {
+                                                                            "type": "string",
+                                                                            "example": "Reduction Field Name"
+                                                                        },
+                                                                        "slug": {
+                                                                            "type": "string",
+                                                                            "example": "reduction-field-slug"
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                }
+                                                            },
+                                                            "shows": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "properties": {
+                                                                        "date_event": {
+                                                                            "type": "string",
+                                                                            "example": "2024-07-15"
+                                                                        },
+                                                                        "eventoId": {
+                                                                            "type": "string",
+                                                                            "example": "ABCDE"
+                                                                        },
+                                                                        "availability": {
+                                                                            "type": "integer",
+                                                                            "example": 10
+                                                                        },
+                                                                        "product_id": {
+                                                                            "type": "integer",
+                                                                            "example": 1
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                }
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Service not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Service not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to retrieve data: Internal Server Error"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "Authentication": []
+                    }
+                ]
+            }
+        },
+        "/api/evento/{eventoId}/ordineposto/{cod_ordine_posto}/disponibilita": {
+            "get": {
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Get availability of an order position for an event",
+                "operationId": "b9a3e65eb3ceb33dfd2eb25168ba292c",
+                "parameters": [
+                    {
+                        "name": "eventoId",
+                        "in": "path",
+                        "description": "SIAE ID of the event",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "cod_ordine_posto",
+                        "in": "path",
+                        "description": "SIAE code of seat type ",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Availability retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Posti disponibili retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "disponibilita": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve availability",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to retrieve availability: Internal Server Error"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "Authentication": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Order": {
+                "properties": {
+                    "id": {
+                        "description": "Order ID",
+                        "type": "integer"
+                    },
+                    "user_id": {
+                        "description": "User ID",
+                        "type": "integer"
+                    },
+                    "status": {
+                        "description": "Order status",
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "Authentication": {
+                "type": "http",
+                "scheme": "Bearer",
+                "name": "Authentication",
+                "in": "header"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Authentication",
+            "description": "Authentication"
+        },
+        {
+            "name": "Cart Products",
+            "description": "Cart Products"
+        },
+        {
+            "name": "Orders",
+            "description": "Orders"
+        },
+        {
+            "name": "Sites",
+            "description": "Sites"
+        },
+        {
+            "name": "Services",
+            "description": "Services"
+        },
+        {
+            "name": "Products",
+            "description": "Products"
+        },
+        {
+            "name": "Events",
+            "description": "Events"
+        }
+    ]
+}
