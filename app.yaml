@@ -53,7 +53,7 @@ env_variables:
   LOG_DEPRECATIONS_CHANNEL: null
   LOG_LEVEL: debug
 
-  DB_HOST: 34.17.67.169
+  DB_HOST: 127.0.0.1
   DB_PORT: 3306
   DB_DATABASE: mims-2024
   DB_USERNAME: siae-user
