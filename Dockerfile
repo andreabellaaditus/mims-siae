@@ -9,7 +9,7 @@ RUN apt-get update && \
     libjpeg-dev \
     libfreetype6-dev \
     libicu-dev \
-    libonig-dev \
+    libonig-dev
 
 # Enable mod_rewrite
 RUN a2enmod rewrite
