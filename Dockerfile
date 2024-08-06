@@ -1,39 +1,65 @@
-FROM php:8.3-apache
+FROM php:8.2-fpm-alpine
 
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y \
-    libzip-dev \
-    zip \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    libicu-dev \
-    libonig-dev
+RUN apk update && \
+    apk add \
+        git \
+        curl \
+        make \
+        icu-dev \
+        zlib-dev \
+        openssl-dev \
+        openldap-dev \
+        oniguruma-dev \
+        imagemagick-dev \
+        gnu-libiconv \
+        libtool \
+        libmagic \
+        libpq \
+        libltdl \
+        libjpeg \
+        libpng-dev \
+        libxpm-dev \
+        libvpx-dev \
+        libxml2-dev \
+        libwebp-dev \
+        libssh2-dev \
+        libmcrypt-dev \
+        libexif-dev \
+        libxslt-dev \
+        libmemcached-dev \
+        libzip-dev \
+        libjpeg-turbo-dev \
+        nodejs npm
 
-# Enable mod_rewrite
-RUN a2enmod rewrite
+RUN apk add --no-cache nginx wget
 
-# Install PHP extensions
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
-    docker-php-ext-install gd pdo_mysql zip
+RUN mkdir -p /run/nginx
 
-# Set the Apache document root
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+COPY docker/nginx.conf /etc/nginx/nginx.conf
 
-# Copy the application code
-COPY . /var/www/html
+RUN mkdir -p /app
+COPY . /app
 
-# Set the working directory
-WORKDIR /var/www/html
+RUN docker-php-ext-install pdo pdo_mysql
+RUN docker-php-ext-configure gd
+RUN docker-php-ext-install gd
+RUN docker-php-ext-configure intl
+RUN docker-php-ext-install intl
+RUN docker-php-ext-install mbstring
+RUN docker-php-ext-configure zip
+RUN docker-php-ext-install zip
+RUN docker-php-ext-install xml
+#RUN docker-php-ext-install iconv
+RUN docker-php-ext-install simplexml
+RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer
+#RUN /usr/local/bin/composer install --no-dev
+RUN cd /app && \
+    /usr/local/bin/composer install --no-dev
 
-# Install composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+RUN cd /app && \
+    npm install && \
+    npm run build;
 
-# Install project dependencies
-RUN composer install
+RUN chown -R www-data: /app
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+CMD sh /app/docker/startup.sh
