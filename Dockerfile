@@ -49,6 +49,8 @@ RUN docker-php-ext-install mbstring
 RUN docker-php-ext-configure zip
 RUN docker-php-ext-install zip
 RUN docker-php-ext-install xml
+RUN docker-php-ext-install bcmath
+
 #RUN docker-php-ext-install iconv
 RUN docker-php-ext-install simplexml
 RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer
