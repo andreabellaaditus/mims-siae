@@ -1,0 +1,30 @@
+steps:
+  - id: "build image"
+    name: "gcr.io/cloud-builders/docker"
+    entrypoint: 'bash'
+    args:
+      ['-c', 'docker build --build-arg CONTAINER_PRIVATE_KEY=$$PRIVATE_KEY --build-arg CONTAINER_PUBLIC_KEY=$$PUBLIC_KEY -t gcr.io/${PROJECT_ID}/${_JOB_NAME} .']
+    secretEnv: [ 'PRIVATE_KEY', 'PUBLIC_KEY' ]
+  - id: "push image"
+    name: "gcr.io/cloud-builders/docker"
+    args: [ "push", "gcr.io/${PROJECT_ID}/${_JOB_NAME}" ]
+
+  - id: "deploy to cloud run"
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+            [
+              'beta', 'run', '${_JOB_NAME}',
+              '--image', 'gcr.io/${PROJECT_ID}/${_JOB_NAME}',
+              '--region', '${_REGION}',
+              '--set-env-vars', "BUCKET=${_BUCKET}",
+              '--set-env-vars', "MNT_DIR=${_MNT_DIR}"
+            ]
+images:
+    - "gcr.io/${PROJECT_ID}/${_JOB_NAME}"
+availableSecrets:
+  secretManager:
+    - versionName: "projects/${_PROJECT_ID_NUMBER}/secrets/${_CONTAINER_PRIVATE_KEY_SECRET_NAME}/versions/latest"
+      env: "PRIVATE_KEY"
+    - versionName: "projects/${_PROJECT_ID_NUMBER}/secrets/${_CONTAINER_PUBLIC_KEY_SECRET_NAME}/versions/latest"
+      env: "PUBLIC_KEY"
