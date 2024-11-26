@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{ PaymentType, Product, ProductReductionField, SiaeScan, Cart, Company, DocumentType, SiaeOrder, SiaeOrderItem, SiaeOrderItemReduction, OrderItemStatus, OrderStatus, OrderType, Payment, SiaeProductHolder, SiaeOrderReprint};
+use App\Models\{ User, PaymentType, Product, ProductReductionField, SiaeScan, Cart, Company, DocumentType, SiaeOrder, SiaeOrderItem, SiaeOrderItemReduction, OrderItemStatus, OrderStatus, OrderType, Payment, SiaeProductHolder, SiaeOrderReprint};
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\{Ecommerce, Functions, ProductFeeHelper, Stripe, StripeSca };
 use App\Http\Requests\storeOrderRequest;
@@ -20,135 +20,21 @@ use Stripe\Exception\ApiErrorException;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Stripe\StripeClient;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
     private StripeClient $stripe;
-    public function __construct()
+    /*public function __construct()
     {
-        $this->middleware('logged-user')->except('endpayment');
-    }
-
-/**
- * @OA\Post(
- *     path="/api/orders/store",
- *     summary="Create a new order",
- *     tags={"Orders"},
- *     security={ {"Authentication": {} }},
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             type="object",
- *             required={"lang", "terms_and_conditions", "invoice"},
- *             @OA\Property(
- *                 property="lang",
- *                 type="string",
- *                 description="Language for the payment",
- *                 example="it"
- *             ),
- *             @OA\Property(
- *                 property="terms_and_conditions",
- *                 type="boolean",
- *                 description="Must be accepted"
- *             ),
- *             @OA\Property(
- *                 property="invoice",
- *                 type="boolean",
- *                 description="Invoice requirement"
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Order created successfully",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(
- *                 property="success",
- *                 type="boolean",
- *                 description="Indicates whether the order creation was successful"
- *             ),
- *             @OA\Property(
- *                 property="status",
- *                 type="string",
- *                 description="Status of the operation"
- *             ),
- *             @OA\Property(
- *                 property="data",
- *                 type="object",
- *                 description="Details of the created order",
- *                 @OA\Property(
- *                     property="order_id",
- *                     type="integer",
- *                     description="ID of the order"
- *                 ),
- *                 @OA\Property(
- *                     property="payment_link",
- *                     type="string",
- *                     description="Payment link"
- *                 )
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=400,
- *         description="Invalid request",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(
- *                 property="success",
- *                 type="boolean",
- *                 example=false
- *             ),
- *             @OA\Property(
- *                 property="status",
- *                 type="object",
- *                 @OA\Property(
- *                     property="terms_and_conditions",
- *                     type="array",
- *                     @OA\Items(
- *                         type="string",
- *                         example="must_be_accepted"
- *                     )
- *                 ),
- *                 @OA\Property(
- *                     property="invoice",
- *                     type="array",
- *                     @OA\Items(
- *                         type="string",
- *                         example="required"
- *                     )
- *                 )
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=500,
- *         description="Internal server error",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(
- *                 property="success",
- *                 type="boolean",
- *                 example=false
- *             ),
- *             @OA\Property(
- *                 property="status",
- *                 type="string",
- *                 example="error"
- *             ),
- *             @OA\Property(
- *                 property="message",
- *                 type="string",
- *                 description="Error message"
- *             )
- *         )
- *     )
- * )
- */
+        $this->middleware('logged-user')->except('endpayment', 'store', 'createStripePrices', 'finishOrder', 'history');
+    }*/
 
     public function store(storeOrderRequest $request)
     {
+        $user = request()->input('user');
+        $user = User::where('email', $user['email'])->first();
+        auth()->setUser($user);
         $payment_link = null;
         $order = null;
 
@@ -158,7 +44,6 @@ class OrderController extends Controller
                 if ($request->lang !== null) {
                     $lang = $request->lang;
                 }
-                $user = auth()->user();
                 $cart = Cart::with([
                         'cart_products.product' => function($product) {
                             $product->select('id', 'name', 'service_id', 'date_event', 'price_sale', 'price_web', 'validity_from_issue_unit', 'validity_from_issue_value', 'has_additional_code', 'is_siae', 'code', 'cod_ordine_posto')
@@ -169,55 +54,60 @@ class OrderController extends Controller
                                 ]);
                         }
                     ])
-                    ->where('user_id', $user->id)
-                    ->firstOrFail();
+                    ->where('user_id', auth()->user()->id)
+                    ->first();
 
                 $siaeService = new SiaeService();
-                foreach ($cart->cart_products as $cartProduct) {
-                    if ($cartProduct->product->is_siae) {
-                        if ($siaeService->getDisponibilitaOrdinePosto($cartProduct->product->code, $cartProduct->product->cod_ordine_posto) <= 0) {
-                            if ($order) {
-                                $cancelledStatus = OrderStatus::where('slug', 'deleted')->first();
-                                $order->deleted_at = Carbon::now();
-                                $order->order_status_id = $cancelledStatus->id;
-                            }
-                            throw new HttpResponseException(
-                                response()->json([
-                                    'success' => false,
-                                    'status' => 'error',
-                                    'message' => 'Posti esauriti per ' . $cartProduct->product->name . " - " . $cartProduct->product->date_event
-                                ])
-                            );
-                        }
 
-                        $eventDateTime = Carbon::parse($cartProduct->product->date_event);
-                        if ($eventDateTime->isPast()) {
-                            if ($order) {
-                                $cancelledStatus = OrderStatus::where('slug', 'deleted')->first();
-                                $order->deleted_at = Carbon::now();
-                                $order->order_status_id = $cancelledStatus->id;
+                if(isset($cart->cart_products)){
+                    foreach ($cart->cart_products as $cartProduct) {
+                        if ($cartProduct->product->is_siae) {
+                            if ($siaeService->getDisponibilitaOrdinePosto($cartProduct->product->code, $cartProduct->product->cod_ordine_posto) <= 0) {
+                                if ($order) {
+                                    $cancelledStatus = OrderStatus::where('slug', 'deleted')->first();
+                                    $order->deleted_at = Carbon::now();
+                                    $order->order_status_id = $cancelledStatus->id;
+                                }
+                                throw new HttpResponseException(
+                                    response()->json([
+                                        'success' => false,
+                                        'status' => 'error',
+                                        'message' => 'Posti esauriti per ' . $cartProduct->product->name . " - " . $cartProduct->product->date_event
+                                    ])
+                                );
                             }
-                            throw new HttpResponseException(
-                                response()->json([
-                                    'success' => false,
-                                    'status' => 'error',
-                                    'message' => 'L\'evento selezionato '.$cartProduct->product->service->name.' è già avvenuto in data '. $eventDateTime->format('d-m-Y H:i:s')
-                                ])
-                            );
+
+                            $eventDateTime = Carbon::parse($cartProduct->product->date_event);
+                            if ($eventDateTime->isPast()) {
+                                if ($order) {
+                                    $cancelledStatus = OrderStatus::where('slug', 'deleted')->first();
+                                    $order->deleted_at = Carbon::now();
+                                    $order->order_status_id = $cancelledStatus->id;
+                                }
+                                throw new HttpResponseException(
+                                    response()->json([
+                                        'success' => false,
+                                        'status' => 'error',
+                                        'message' => 'L\'evento selezionato '.$cartProduct->product->service->name.' è già avvenuto in data '. $eventDateTime->format('d-m-Y H:i:s')
+                                    ])
+                                );
+                            }
                         }
                     }
                 }
 
-                $order = $this->storeOrder($cart, $user);
-                $orderItems = $this->storeOrderItems($cart, $order);
-                $this->storeReductions($orderItems);
-                $this->storeProductHolders($orderItems, $cart);
+                if(isset($cart->cart_products)){
+                    $order = $this->storeOrder($cart, auth()->user());
+                    $orderItems = $this->storeOrderItems($cart, $order);
+                    //$this->storeReductions($orderItems);
+                    //$this->storeProductHolders($orderItems, $cart);
 
-                $orderService = new OrderService();
-                $orderService->order_check_matrix_online($order->id);
-                $payment = $this->createStripePayment($order, $lang);
-                $payment_link = $payment->url . "?prefilled_email=" . $user->email;
+                    //$orderService = new OrderService();
+                    //$orderService->order_check_matrix_online($order->id);
+                    //$payment = $this->createStripePayment($order, $lang);
+                    //$payment_link = $payment->url . "?prefilled_email=" . auth()->user()->email;
 
+                }
             });
         } catch (Throwable | ApiErrorException $e) {
             $user = auth()->user();
@@ -239,32 +129,12 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/orders/history",
-     *     summary="Get order history",
-     *     tags={"Orders"},
-     *     security={ {"Authentication": {} }},
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successful response",
-     *         @OA\JsonContent(
-     *             type="array",
-     *             @OA\Items(ref="#/components/schemas/Order")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Internal Server Error"
-     *     ),
-     *
-     * )
-     */
-    public function history()
+    public function storia(Request $request)
     {
+        $email = $request->input('email');
+        $user = User::where('email', $email)->first();
         try {
-            $orders = SiaeOrder::where('user_id', auth()->user()->id)->get();
+            $orders = SiaeOrder::where('user_id', $user->id)->limit(5)->get();
         }
         catch(Throwable $e) {
             $error = $e->getMessage();
@@ -276,41 +146,6 @@ class OrderController extends Controller
             'data' => isset($orders) ? $this->getOrdersResource($orders) : false
         ]);
     }
-
-    /**
-     * @OA\Get(
-     *     path="/api/orders/{id}/tickets",
-     *     summary="Download tickets for a specific order",
-     *     tags={"Orders"},
-     *     security={ {"Authentication": {} }},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         description="ID of the order",
-     *         @OA\Schema(
-     *             type="integer"
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Tickets downloaded successfully",
-     *         @OA\MediaType(
-     *             mediaType="application/pdf"
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Order not found",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="status", type="string", example="error"),
-     *             @OA\Property(property="message", type="string", example="Order not found")
-     *         )
-     *     )
-     * )
-     */
 
     public function tickets($orderId)
     {
@@ -396,7 +231,6 @@ class OrderController extends Controller
                                 $statusCode = $product->service->is_pending ? 'pending' : 'purchased';
                                 $qty = $cartProductsByHourService->count();
 
-
                                 $productService = new ProductService($product);
                                 $orderItem = SiaeOrderItem::create([
                                     'siae_order_id' => $order->id,
@@ -440,7 +274,6 @@ class OrderController extends Controller
                                         'additional_code' => $rel_prod->has_additional_code ? SiaeOrderItem::getAdditionalCode() : null
                                     ]);
                                 }
-
 
                                 self::createOrderItemMatrix('online', $orderItem);
 
@@ -510,31 +343,48 @@ class OrderController extends Controller
         }
     }
 
-    public function createStripePrice($productId): string
+    public function createStripePrices(Request $request)
     {
-        $product = Product::find($productId);
-        $productName = $product->name;
-        $productPrice = $product->price_sale;
+        $order_id = $request->input('order_id');
+        $this->stripe = new StripeClient(env('STRIPE_SECRET_KEY'));
+        $order = SiaeOrder::find($order_id);
+        $array_items = [];
+        $totalPrice = 0;
 
-        foreach ($product->related_products as $related_prod) {
-            $productName .= " + " . $related_prod->name;
-            $productPrice += $related_prod->price_sale;
+        foreach ($order->items as $item) {
+            $product = Product::find($item->product_id);
+            $productName = $product->name;
+            $productPrice = $product->price_sale;
+
+            foreach ($product->related_products as $related_prod) {
+                $productName .= " + " . $related_prod->name;
+                $productPrice += $related_prod->price_sale;
+            }
+
+            $price = $this->stripe->prices->create([
+                'currency' => 'eur',
+                'unit_amount' => $productPrice * 100,
+                'product_data' => [
+                    'name' => $productName
+                ],
+                'metadata' => [
+                    'site' => $product->service->site->name,
+                    'id' => $product->id
+                ]
+            ]);
+
+            $array_items['line_items'][] = [
+                'price' => $price->id,
+                'quantity' => $item->qty,
+            ];
+
+            $totalPrice += $productPrice * $item->qty; // Moltiplica per la quantità
         }
 
-
-        $price = $this->stripe->prices->create([
-            'currency' => 'eur',
-            'unit_amount' => $productPrice * 100,
-            'product_data' => [
-                'name' => $productName
-            ],
-            'metadata' => [
-                'site' => $product->service->site->name,
-                'id' => $product->id
-            ]
-        ]);
-
-        return $price->id;
+        return [
+            'line_items' => $array_items['line_items'], // Restituisci anche i line_items
+            'total_price' => $totalPrice, // Restituisci il totale
+        ];
     }
 
 
@@ -576,7 +426,6 @@ class OrderController extends Controller
         $payload = @file_get_contents('php://input');
         $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
         $event = null;
-        Log::info($payload);
         try {
 
             $event = \Stripe\Webhook::constructEvent(
@@ -587,7 +436,6 @@ class OrderController extends Controller
 
         } catch (\UnexpectedValueException $e) {
 
-            Log::error('Invalid Payload', ['exception' => $e]);
             $user = auth()->user();
             if (isset($order) && $order) {
                 $cancelledStatus = OrderStatus::where('slug', 'deleted')->first();
@@ -603,8 +451,6 @@ class OrderController extends Controller
             http_response_code(400);
             exit();
         } catch (\Stripe\Exception\SignatureVerificationException $e) {
-
-            Log::error('Invalid Signature', ['exception' => $_SERVER]);
 
             $user = auth()->user();
             if (isset($order) && $order) {
@@ -628,7 +474,6 @@ class OrderController extends Controller
                 $this->finishOrder($order, $order->items, $event->data->object->payment_intent, $event->data->object->metadata->lang, $event->data->object->metadata->user_id);
                 break;
             default:
-                Log::warning('Received unknown event type', ['event_type' => $event->type]);
                 if (isset($event->data->object->payment_intent)) {
                     $this->refundPayment($stripe, $event->data->object->payment_intent);
                 }
@@ -644,15 +489,22 @@ class OrderController extends Controller
     {
         try {
             $stripe->refunds->create(['payment_intent' => $paymentIntentId]);
-            Log::info('PaymentIntent cancelled successfully', ['payment_intent_id' => $paymentIntentId]);
         } catch (\Exception $e) {
             Log::error('Failed to cancel PaymentIntent', ['payment_intent_id' => $paymentIntentId, 'exception' => $e]);
         }
     }
 
 
-    private function finishOrder(SiaeOrder $order, $orderItems, $paymentCodeId, $lang, $user_id)
+    public function finishOrder(Request $request)
     {
+        $order_id = $request->input('order_id');
+        $lang = $request->input('lang');
+        $email = $request->input('email');
+        $user = User::where('email', $email)->firstOrFail();
+
+        $payment_code_id = $request->input('payment_code_id');
+        $order = SiaeOrder::find($order_id);
+        $orderItems = $order->items;
         $isPending = false;
         $fees = 0;
 
@@ -661,11 +513,9 @@ class OrderController extends Controller
                 if ($orderItem->order_item_status->slug == 'pending') {
                     $isPending = true;
                 }
-                Log::info('aa5');
 
                 if($orderItem->product->service->product_category->slug == 'site-events'){
 
-                    Log::info('aa3');
                     $siaeService = new SiaeService();
                     $res_ticket = $siaeService->emettiBigliettoOnline($orderItem, $lang);
                     if($res_ticket === false){
@@ -691,7 +541,7 @@ class OrderController extends Controller
 
         $order->payment_id = Payment::insertGetId([
             'gateway' => 'stripe',
-            'code' => $paymentCodeId,
+            'code' => $payment_code_id ?? 'free',
             'total' => $order->price,
             'payment_type_id' => PaymentType::where('slug', 'stripe')->first()->id
         ]);
@@ -699,7 +549,7 @@ class OrderController extends Controller
         $order->price = $order->price + $fees;
         $order->save();
 
-        $cart = Cart::with('cart_products')->where('user_id', $user_id)->first();
+        $cart = Cart::with('cart_products')->where('user_id', $user->id)->first();
 
         if ($cart) {
             foreach ($cart->cart_products as $cartProduct) {
@@ -748,11 +598,6 @@ class OrderController extends Controller
                 return $item->order_item_status()->where('slug', 'purchased')->exists() &&
                        $item->product->service->product_category->slug !== 'site-events';
             });
-
-            Log::info('Filtered purchased items', [
-                'order_id' => $order->id,
-                'purchased_items' => $purchasedItems->pluck('id')
-            ]);
 
             if ($purchasedItems->isEmpty()) {
                 Log::info('No purchased items to send tickets for order', ['order_id' => $order->id]);
@@ -827,11 +672,11 @@ class OrderController extends Controller
     private function getOrderResource(SiaeOrder $order, $payment_link = null)
     {
         return [
+            'id' => $order->id,
             'order_number' => $order->order_number,
-            'payment_link' => $payment_link,
             'total_price' => $order->price,
             'created_at' => $order->created_at,
-            'tickets' => env('ADITUSCULTURE_API_NAME').'/api/orders/'.$order->id.'/tickets',
+            'updated_at' => $order->updated_at,
             'items' => $this->getOrderItemsResource($order)
         ];
     }
@@ -846,7 +691,7 @@ class OrderController extends Controller
                     ->with([
                         'scans',
                         'product' => function($product) {
-                            $product->select('id', 'name', 'service_id')
+                            $product->select('id', 'name', 'service_id', 'price_web')
                                     ->with('related_products', 'service', 'service.product_category');
                         }
                     ]);
@@ -860,12 +705,14 @@ class OrderController extends Controller
                 foreach ($orderItem->product->related_products as $related_prod) {
                     $productName .= " + " . $related_prod->name;
                 }
-
                 $orderItemsResource[] = [
                     'date_service' => $orderItem->date_service,
                     'hour_service' => $orderItem->hour_service,
                     'product' => $productName,
-                    'qty' => $orderItem->qty
+                    'product_id' => $orderItem->product_id,
+                    'id' => $orderItem->id,
+                    'price' => $orderItem->product->price_web,
+                    'quantity' => $orderItem->qty
                 ];
             }
         });

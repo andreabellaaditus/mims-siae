@@ -3,12 +3,13 @@
 namespace App\Http\Requests;
 
 use App\Services\SlotService;
-use App\Models\{Cart, CartProduct, DocumentType, Product, ProductReductionField, ReductionField, Reduction, Service };
+use App\Models\{Cart, CartProduct, DocumentType, Product, ProductReductionField, ReductionField, Reduction, Service, User };
 use Carbon\Carbon;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use InvalidArgumentException;
+use Illuminate\Support\Facades\Log;
 
 class storeOrderRequest extends FormRequest
 {
@@ -36,7 +37,7 @@ class storeOrderRequest extends FormRequest
             //'payment_method_id' => 'required|string',
             'payment_intent' => 'nullable|string',
             'invoice' => 'required|boolean',
-            'reductions' => 'array',
+            //'reductions' => 'array',
             'lang' => 'nullable'
         ];
     }
@@ -51,7 +52,7 @@ class storeOrderRequest extends FormRequest
             'payment_intent.string' => 'string',
             'invoice.required' => 'required',
             'invoice.boolean' => 'boolean',
-            'reductions.json' => 'invalid_json'
+            //'reductions.json' => 'invalid_json'
         ];
     }
 
@@ -77,6 +78,7 @@ class storeOrderRequest extends FormRequest
 
     public function failedValidation(Validator $validator)
     {
+        log::info($validator->errors());
         throw new HttpResponseException(
             response()->json([
                 'success' => false,
@@ -86,6 +88,10 @@ class storeOrderRequest extends FormRequest
     }
     private function validateCart(Validator $validator)
     {
+        $user = request()->input('user');
+        $user = User::where('email', $user['email'])->first();
+        auth()->setUser($user);
+
         $cart = Cart::with([
                 'cart_products' => function($cartProducts) {
                     $cartProducts->with([
@@ -104,11 +110,6 @@ class storeOrderRequest extends FormRequest
                                                 }
                                             ]);
                                     },
-
-                                    'reductions' => function($reductions) {
-                                        $reductions->select('id', 'product_id');
-                                    },
-
                                 ]);
                         }
                     ]);
@@ -117,23 +118,26 @@ class storeOrderRequest extends FormRequest
             ->where('user_id', auth()->user()->id)
             ->first();
 
-
-        if($this->validateCartValidator($validator, $cart))
-        {
+        //if($this->validateCartValidator($validator, $cart))
+        //{
+           /* Log::info(__LINE__);
             //$this->validatePaymentMethod($validator, $cart);
             if($this->validateProductsAndSlots($validator, $cart->cart_products))
             {
+                Log::info(__LINE__);
                 if($this->validateReductionsStructure($validator))
                 {
+                    Log::info(__LINE__);
                     $this->validateReductions($validator, $cart->cart_products);
                 }
 
                 if($this->validateService($validator, $cart->cart_products))
                 {
+                    Log::info(__LINE__);
                     //$this->validateSite($validator, $cart->cart_products);
                 }
-            }
-        }
+            }*/
+        //}
 
         return;
     }

@@ -21,7 +21,7 @@ use Filament\Forms\Set;
 use Filament\Forms\Get;
 use Illuminate\Support\HtmlString;
 use Filament\Tables\Columns\Summarizers\Summarizer;
-
+use Livewire\Livewire;
 
 use App\Services\CartProductService;
 
@@ -144,7 +144,7 @@ class CartWidget extends BaseWidget
             ->icon('heroicon-m-minus'),
 
             Tables\Actions\Action::make('add_qty')
-            ->action(function ($record, CartProductService $cartProductService) {
+            ->action(function ($record, CartProductService $cartProductService, Set $set) {
 
                 $existing_prod = $cartProductService->searchIdenticalProducts(['cart_id' => $record->cart_id, 'product_id' => $record->id]);
                 $date_service = null;

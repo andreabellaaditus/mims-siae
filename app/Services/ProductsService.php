@@ -12,7 +12,7 @@ class ProductsService
 
     public function getSalable($service_id, $type){
 
-        return Product::select('id', 'name', 'price_sale', 'deliverable', 'is_siae', 'code', 'cod_ordine_posto')
+        return Product::select('id', 'name', 'price_sale', 'deliverable', 'is_siae', 'code', 'cod_ordine_posto', 'date_event')
         ->whereRaw('validity_from_issue_value IS NOT NULL')
         ->where('deliverable', 1)
         ->where('service_id', $service_id)->where('active', 1)
@@ -23,7 +23,7 @@ class ProductsService
                         ->orWhereDate('end_validity', '>=', Carbon::now()->format('Y-m-d'));
                 });
         })
-        ->whereJsonContains('sale_matrix->customers', [$type => true])
+        ->whereJsonContains('sale_matrix->customers', [$type => true])->orderBy('date_event')
         ->get();
     }
 

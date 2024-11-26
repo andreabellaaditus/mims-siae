@@ -13,6 +13,7 @@ class Payment extends Model
     protected $fillable = [
         'payment_type_id',
         'code',
+        'gateway',
         'total',
         'fee',
     ];

@@ -28,6 +28,7 @@ use App\Filament\Resources\OrderResource\Widgets\Slots;
 use App\Filament\Resources\OrderResource\Widgets\InsertProduct;
 use App\Filament\Resources\OrderResource\Widgets\CartWidget;
 use App\Filament\Resources\OrderResource\Widgets\ModalPrint;
+use App\Filament\Resources\OrderResource\Widgets\ReductionFields;
 use App\Filament\Resources\OrderResource\Widgets\ScanQrCode;
 use App\Models\PaymentType;
 use App\Models\UserSite;
@@ -54,6 +55,7 @@ use App\Services\OrderStatusService;
 use App\Http\Helpers\Functions;
 use App\Models\ProductCategory;
 use App\Models\SafeOperation;
+use App\Models\DocumentType;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\TextInput;
@@ -63,7 +65,9 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Tabs;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Facades\Validator;
 
 use Filament\Support\RawJs;
 
@@ -72,15 +76,20 @@ class CreateOrder extends CreateRecord
     protected static string $resource = OrderResource::class;
     protected static ?string $slug = 'orders';
 
+    protected $listeners = ['refresh_reduction_fields' => '$refresh'];
+
+
     protected function getRedirectUrl(): string
     {
         $record = $this->getRecord();
-        return $this->getResource()::getUrl('create', ['type' => $record->order_type_id, 'site_id' => $record->site_id]);
+        return $this->getResource()::getUrl('create', ['site_id' => $record->site_id]);
     }
 
     protected function getFormActions(): array
     {
+
         return [
+
             Actions\Action::make('Crea ordine')->action('create')
             ->label(__(self::$slug.'.form.create'))
             ->icon('heroicon-m-check')
@@ -101,6 +110,7 @@ class CreateOrder extends CreateRecord
         ];
     }
 
+
     protected function getHeaderActions(): array
     {
         $cashierService = new CashierService;
@@ -112,6 +122,7 @@ class CreateOrder extends CreateRecord
 
         $cashierRegisterClosure['currentCashClosurePayments'] = array();
         ($cashierService->hasOpenDesk($currentUser->id, $site_id)) ?  $cashierRegisterClosure = $cashierService->getClosureByCashier($site_id) : '' ;
+
         return [
             Actions\Action::make('Svuota carrello')
             ->label(__(self::$slug.'.empty-cart'))
@@ -129,8 +140,6 @@ class CreateOrder extends CreateRecord
                     $cartProductService->emptyByCartId($select_cart->id);
                     $cartService->empty($select_cart->id);
 
-                    session()->forget('reduction_fields');
-                    session()->forget('names_data');
                     $this->dispatch('refresh_cart');
                     $this->dispatch('refresh_dates');
                 }
@@ -177,12 +186,12 @@ class CreateOrder extends CreateRecord
             // apertura cassa
             Actions\Action::make('openCashier')
             ->label(function(){
-                $orderService = new OrderService;
-                $cashierService = new CashierService;
-                $site_id = request('site_id') ? request('site_id') : session('site_id');
-                $currentUser = $orderService->getCurrentUser($site_id);
-                return ($cashierService->hasAnotherOpenDesk($currentUser->id)) ?  __(self::$slug.'.cashier.close-other') :  __(self::$slug.'.cashier.cashier-opening') ;
-            }
+                    $orderService = new OrderService;
+                    $cashierService = new CashierService;
+                    $site_id = request('site_id') ? request('site_id') : session('site_id');
+                    $currentUser = $orderService->getCurrentUser($site_id);
+                    return ($cashierService->hasAnotherOpenDesk($currentUser->id)) ?  __(self::$slug.'.cashier.close-other') :  __(self::$slug.'.cashier.cashier-opening') ;
+                }
             )
 
             ->form([
@@ -334,7 +343,6 @@ class CreateOrder extends CreateRecord
                 $cashier = Cashier::find($cashier_id);
                 $cashier_in_use = (!$cashier) ?  '' : " <br> (<b>". $cashier->name."</b>)";
                 return new HtmlString(__(self::$slug.'.cashier.cashier-closing').$cashier_in_use);
-
             })
             ->form([
 
@@ -668,7 +676,6 @@ class CreateOrder extends CreateRecord
                 return ($cashierService->hasOpenDesk($currentUser->id, $site_id)) ?  false :  true ;
             }),
 
-
         ];
     }
 
@@ -692,15 +699,69 @@ class CreateOrder extends CreateRecord
                 'categories' => $categories,
             ]),
             ModalPrint::class,
-            CartWidget::class,
+            CartWidget::make(),
             Slots::class,
         ];
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['reduction_fields'] = session('reduction_fields');
-        $data['names_data'] = session('names_data');
+        $data['reduction_fields'] = [];
+        $data['names_data'] = [];
+
+        foreach ($data as $key => $value) {
+            if (strpos($key, 'reduction_fields') === 0 && !empty($value)) {
+                $newKey = str_replace('reduction_fields', '', $key);
+
+                preg_match('/\[(\d+)\]\[fields\]\[(\d+)\]\[product\]\[(\d+)\]\[reduction\]\[(\d+)\]/', $newKey, $matches);
+
+                if (count($matches) === 5) {
+                    $index = $matches[1];
+                    $reductionFieldId = $matches[2];
+                    $productId = $matches[3];
+                    $reductionId = $matches[4];
+
+                    $data['reduction_fields'][$productId][$index][$reductionFieldId] = [
+                        'reduction_id' => $reductionId,
+                        'value' => $value,
+                    ];
+                }
+            }
+        }
+
+        foreach ($data as $key => $value) {
+            if (strpos($key, 'reduction_fields') === 0 && !empty($value)) {
+                $newKey = str_replace('reduction_fields', '', $key);
+
+                preg_match('/\[(\d+)\]\[fields\]\[(\d+)\]\[product\]\[(\d+)\]\[reduction\]\[(\d+)\]/', $newKey, $matches);
+
+                if (count($matches) === 5) {
+                    $index = $matches[1];
+                    $reductionFieldId = $matches[2];
+                    $productId = $matches[3];
+                    $reductionId = $matches[4];
+
+                    $data['reduction_fields'][$productId][$index][$reductionFieldId] = [
+                        'reduction_id' => $reductionId,
+                        'value' => $value,
+                    ];
+                }
+            } elseif (strpos($key, 'names_data') === 0 && !empty($value)) {
+                $newKey = str_replace('names_data', '', $key);
+
+                preg_match('/\[(\d+)\]\[fields\]\[(\-\d+)\]\[product\]\[(\d+)\]\[reduction\]\[(first_name|last_name)\]/', $newKey, $matches);
+
+                if (count($matches) === 5) {
+                    $index = $matches[1];
+                    $fieldId = $matches[2];
+                    $productId = $matches[3];
+                    $nameField = $matches[4];
+
+                    $data['names_data'][$productId][$index][$nameField] = $value;
+                }
+            }
+        }
+
         $orderService = new OrderService;
         $site_id = request('site_id') ? request('site_id') : session('site_id');
         $currentUser = $orderService->getCurrentUser($site_id);
@@ -711,9 +772,10 @@ class CreateOrder extends CreateRecord
         $data['order_status_id'] = $completedStatusId;
 
         $cashierService = new CashierService;
-        $cashier_id = $cashierService->getCurrentCashierSession($data['site_id']);
+        $cashier_id = $cashierService->getCurrentCashierSession($site_id);
         $data['cashier_id'] = $cashier_id;
         $data['company_id'] = 1;
+        $data['order_type_id'] = OrderType::where('slug', 'onsite')->first()->id;
 
         $type = OrderType::where('slug', 'onsite')->first();
         $data['prefix'] = $type->prefix;
@@ -770,6 +832,7 @@ class CreateOrder extends CreateRecord
                 }
 
                 if ($data['reduction_fields']) {
+
                     $orderService->insertRequiredFields($data['reduction_fields'], $order_item->id, $product->id);
                 }elseif ($product->check_document == 1) {
                     throw new \Exception(__(self::$slug . '.no-reduction-fields-filled'));
@@ -813,14 +876,11 @@ class CreateOrder extends CreateRecord
                 'icon' => 'heroicon-m-check-circle'
             ];
 
-            session()->forget('reduction_fields');
-            session()->forget('names_data');
             DB::commit();
             $notification = new NotificationService;
             $notification->getNotification($result);
         } catch (\Exception $e) {
             $record = new SiaeOrder();
-            $record->order_type_id = $data['order_type_id'];
             $record->site_id = $data['site_id'];
             DB::rollBack();
             $result = [

@@ -19,6 +19,8 @@ use Illuminate\Support\Number;
 use Illuminate\Support\Facades\Blade;
 use App\Services\FileService;
 
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\URL;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -36,6 +38,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (App::environment('production')) {
+            URL::forceScheme('https');
+        }
 
         LanguageSwitch::configureUsing(function (LanguageSwitch $switch) {
             $switch
@@ -43,10 +48,8 @@ class AppServiceProvider extends ServiceProvider
                 ->visible(outsidePanels: true)
                 ->outsidePanelPlacement(Placement::TopRight)
                 ->flags([
-                    'it' => asset(FileService::getStorageObjectUrlSigned('static/images/flags/it.svg')),
-                    'en' => asset(FileService::getStorageObjectUrlSigned('static/images/flags/en.svg')),
-                    //it' => asset('images/flags/it.svg'),
-                    //'en' => asset('images/flags/en.svg'),
+                    'it' => asset('images/flags/it.svg'),
+                    'en' => asset('images/flags/en.svg'),
                 ])
                 ->flagsOnly()
                 ->circular();
@@ -80,7 +83,7 @@ class AppServiceProvider extends ServiceProvider
                 Filament::registerNavigationItems([
                     NavigationItem::make()
                         ->label($site->name)
-                        ->url(fn (): string => OrderResource::getUrl('create', ['site_id' => $site->id, 'type' => $order_type->id]))
+                        ->url(fn (): string => OrderResource::getUrl('create', ['site_id' => $site->id]))
                         ->group(__('orders.navigation-group')),
                 ]);
             }

@@ -195,7 +195,7 @@ class OrderService
                         'last_name' => $fields_array['last_name'],
                         'expired_at' => $productService->getValidity()->format("Y-m-d H:i:s"),
                     ];
-                    ProductHolder::create($dataProductHolder);
+                    SiaeProductHolder::create($dataProductHolder);
                 } else {
                     throw new \Exception(__('orders.no-name-data-filled'));
                 }
@@ -211,6 +211,7 @@ class OrderService
         $product = Product::find($product_id);
         if (isset($array_red_fields[$product_id])) {
             foreach ($array_red_fields[$product_id] as $fields_array) {
+                //dd($array_red_fields[$product_id]);
                 foreach ($fields_array as $reduction_field_id => $field) {
                     if ($field['value'] != '') {
                         $dataRedFields = [

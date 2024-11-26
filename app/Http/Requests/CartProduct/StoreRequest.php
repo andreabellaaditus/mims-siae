@@ -3,12 +3,13 @@
 namespace App\Http\Requests\CartProduct;
 
 use App\Services\SlotService;
-use App\Models\{ CartProduct, Product, Service, Site};
+use App\Models\{ CartProduct, Product, Service, Site, User};
 use Carbon\Carbon;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use InvalidArgumentException;
+use Illuminate\Support\Facades\Log;
 
 class StoreRequest extends FormRequest
 {
@@ -66,25 +67,22 @@ class StoreRequest extends FormRequest
             ])
         );
     }
-
     private function validateCart(Validator $validator)
     {
-
         $cartProductsRequest = collect($this->input('products'));
+        $email = $this->input('email');
+        $user = User::where('email', $email)->first();
 
-        if($this->validateProductsAndSlots($validator, $cartProductsRequest))
-        {
-            $dbCartProducts = CartProduct::whereHas('cart', function($query) {
-                    $query->where('user_id', auth()->user()->id);
-                })
-                ->get();
+        if ($this->validateProductsAndSlots($validator, $cartProductsRequest, $user)) {
+            $dbCartProducts = CartProduct::whereHas('cart', function($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->get();
 
-            if($this->validateProductQuantity($validator, $cartProductsRequest, $dbCartProducts))
-            {
+            if ($this->validateProductQuantity($validator, $cartProductsRequest, $dbCartProducts)) {
                 $this->validateService($validator, $cartProductsRequest, $dbCartProducts);
                 /*
-                if($this->validateService($validator, $cartProductsRequest, $dbCartProducts))
-                {
+                if ($this->validateService($validator, $cartProductsRequest, $dbCartProducts)) {
                     $this->validateSite($validator, $cartProductsRequest, $dbCartProducts);
                 }
                 */
@@ -93,6 +91,7 @@ class StoreRequest extends FormRequest
 
         return;
     }
+
     private function validateProductsAndSlots(Validator $validator, $cartProducts)
     {
         $valid = true;

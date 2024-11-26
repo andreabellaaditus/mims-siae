@@ -111,6 +111,16 @@ class CashierService
         ->count();
     }
 
+
+    public function hasAnotherSiteOpen($current_user_id, $site_id)
+    {
+        return CashierActive::join('cashiers', 'cashiers.id', '=', 'cashiers_active.cashier_id')
+            ->where('user_id', $current_user_id)
+            ->where('cashiers.site_id', '<>', $site_id) // Modificato per essere diverso
+            ->count();
+    }
+
+
     public function hasAnotherOpenDesk($current_user_id){
 
         return CashierActive::where('user_id', $current_user_id)

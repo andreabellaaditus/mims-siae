@@ -8,7 +8,7 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "^8.3.1",
+        "php": "^8.4.1",
         "aymanalhattami/filament-page-with-sidebar": "^2.5",
         "barryvdh/laravel-debugbar": "^3.13",
         "barryvdh/laravel-dompdf": "^2.0",
@@ -17,6 +17,7 @@
         "darkaonline/l5-swagger": "^8.6",
         "filament/filament": "^3.2",
         "guzzlehttp/guzzle": "^7.8",
+        "juststeveking/laravel-redoc": "^2.1",
         "lara-zeus/matrix-choice": "^3.2",
         "laravel/cashier": "^15.3",
         "laravel/framework": "^11.0",
@@ -46,6 +47,7 @@
         "laravel/sail": "^1.31",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.1",
+        "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^10.5",
         "spatie/laravel-ignition": "^2.3"
     },
@@ -62,6 +64,9 @@
         }
     },
     "scripts": {
+        "post-install-cmd": [
+            "php artisan l5-swagger:generate"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi",
@@ -83,6 +88,7 @@
         }
     },
     "config": {
+        "platform-check": false,
         "optimize-autoloader": true,
         "preferred-install": "dist",
         "sort-packages": true,
@@ -91,6 +97,7 @@
             "php-http/discovery": true
         }
     },
+
     "minimum-stability": "stable",
     "prefer-stable": true
 }

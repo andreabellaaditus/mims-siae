@@ -2,6 +2,8 @@
 use App\Filament\Resources\OrderResource;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\OrderController;
+use App\Models\Reduction;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -39,8 +41,7 @@ Route::any('/test-tornelli', 'App\Http\Controllers\AccessControlController@valid
 Route::post('/endpayment', [OrderController::class, 'endpayment']);
 Route::get('/admin/orders/export', [OrderResource::class, 'export']);
 
-Route::get('/auth/unauthorized', [App\Http\Controllers\AuthController::class, 'unauthorized']);
-Route::post('/auth/login', [App\Http\Controllers\AuthController::class, 'login']);
+
 
 // cronjob geteventi siae
 Route::get('/run-fetch-events', function () {

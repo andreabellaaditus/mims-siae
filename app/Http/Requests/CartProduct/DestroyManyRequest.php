@@ -26,14 +26,18 @@ class DestroyManyRequest extends FormRequest
     public function rules()
     {
         return [
-            'ids' => 'json'
+            'ids' => 'required|array',
+            'ids.*.id' => 'required|integer',
         ];
     }
 
     public function messages()
     {
         return [
-            'ids.json' => 'invalid_json'
+            'ids.required' => 'The ids field is required.',
+            'ids.array' => 'The ids field must be an array.',
+            'ids.*.id.required' => 'Each item must have an id.',
+            'ids.*.id.integer' => 'Each id must be an integer.',
         ];
     }
 

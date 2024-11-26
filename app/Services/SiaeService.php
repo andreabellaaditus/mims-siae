@@ -69,6 +69,7 @@ class SiaeService
             $context = stream_context_create($options);
 
             $eventi = json_decode(@file_get_contents($url, false, $context));
+            Log::info($eventi);
             foreach($eventi as $evento) {
                 $spettacolo = $this->getSpettacolo($token, $evento->spettacoloId);
 
@@ -96,9 +97,13 @@ class SiaeService
                             $codici_riduzione = $this->getCodiciRiduzione($token, $evento->id, $ordine_posto->codice);
                             $codici_riduzione_online = $this->getCodiciRiduzioneOnline($token, $evento->id, $ordine_posto->codice, $visibilita = 1);
 
-                            $codici_riduzione_online_codes = array_map(function($item) {
-                                return $item->codice;
-                            }, $codici_riduzione_online);
+                            if(isset($codici_riduzione_online)){
+                                $codici_riduzione_online_codes = array_map(function($item) {
+                                    return $item->codice;
+                                }, $codici_riduzione_online);
+                            }else{
+                                $codici_riduzione_online_codes = array();
+                            }
 
                             if ($codici_riduzione) {
                                 foreach($codici_riduzione as $riduzione) {
@@ -137,14 +142,14 @@ class SiaeService
                                                     "schools" => [
                                                         "crm" => null,
                                                         "tvm" => null,
-                                                        "online" => null,
-                                                        "onsite" => null
+                                                        "online" => $isOnline,
+                                                        "onsite" => true
                                                     ],
                                                     "agencies" => [
                                                         "crm" => null,
                                                         "tvm" => null,
-                                                        "online" => null,
-                                                        "onsite" => null
+                                                        "online" => $isOnline,
+                                                        "onsite" => true
                                                     ],
                                                     "customers" => [
                                                         "crm" => null,

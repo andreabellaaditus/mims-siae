@@ -129,7 +129,6 @@ class ServiceResource extends Resource
 
                                         Forms\Components\TextInput::make('negozio_id')
                                             ->numeric()
-                                            ->required()
                                             ->label(__(self::$slug . '.form.negozio_id')),
 
                                         Forms\Components\Toggle::make('active')

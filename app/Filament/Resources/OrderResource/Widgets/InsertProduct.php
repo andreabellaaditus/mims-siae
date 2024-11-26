@@ -21,12 +21,12 @@ use App\Services\ServiceService;
 use App\Services\ProductCategoryService;
 use App\Services\ProductService;
 use App\Services\OrderService;
+use App\Services\CashierService;
 use App\Services\SiaeService;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Set;
 use Carbon\Carbon;
-
 
 class InsertProduct extends Widget implements HasForms
 {
@@ -69,7 +69,6 @@ class InsertProduct extends Widget implements HasForms
         return $tabs;
     }
 
-
     public static function getServices($product_category_id, $site_id) : array{
         $serviceService = new ServiceService;
         $res = $serviceService->getByProductCategoryAndSite($product_category_id, $site_id);
@@ -87,19 +86,23 @@ class InsertProduct extends Widget implements HasForms
         Select::make('categories.'.$product_category)
             ->label(__('orders.form.select-products'))
             ->searchable()
-            ->reactive()
             ->options($products)
+            ->live()
             ->disableOptionWhen(function(string $value){
                 $product = new Product();
                 $product->id = $value;
                 $productService = new ProductService($product);
-
                 $res_del = $productService->getIsDeliverable();
-                return !$res_del->deliverable;
+
+                $orderService = new OrderService;
+                $cashierService = new CashierService;
+                $site_id = request('site_id') ? request('site_id') : session('site_id');
+                $currentUser = $orderService->getCurrentUser($site_id);
+
+                return !$res_del->deliverable || $cashierService->hasAnotherSiteOpen($currentUser->id, $site_id);
             })
             ->extraAttributes(['class' => 'choose-products'])
             ->afterStateUpdated(function (Set $set, $state) {
-
                 $cartService = new CartService();
                 $cartProductService = new CartProductService();
                 $currentUser = auth()->user();
@@ -143,7 +146,6 @@ class InsertProduct extends Widget implements HasForms
         return $services;
     }
 
-
     public static function getProducts($service_id) : array{
         $productService = new ProductsService();
         $type= 'onsite';
@@ -154,6 +156,9 @@ class InsertProduct extends Widget implements HasForms
             foreach($related_products as $related_prod){
                 $product['name'].= " + ".$related_prod['name'];
                 $product['price_sale'] += $related_prod['price_sale'];
+            }
+            if($product['date_event'] != null){
+                $product['name'].= " (". date('d-m-Y H:i', strtotime($product['date_event'])).")";
             }
 
             /*if($product['is_siae'] == 1){

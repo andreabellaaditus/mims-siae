@@ -61,19 +61,62 @@ class CartProductService
 
         return $query;
     }
+    public function getReductionFields($cart, $site_id = 1) {
+        $this->products = [];
 
-    public function getGroupedProducts($cart, $site_id = 1){
+        $cart->cart_products
+            ->groupBy('product_id')
+            ->each(function($cartProductsByProduct, $productId) use($site_id) {
+                $qty = $cartProductsByProduct->count();
+                $cartProduct = $cartProductsByProduct->first();
+                $product = $cartProduct->product;
+
+
+                if ($product->is_name) {
+                    $fields[-1] = [
+                        'name' => 'Nome',
+                        'product_id' => $product->id,
+                        'reduction_id' => 'first_name',
+                        'reduction_field_id' => 0,
+                    ];
+                    $fields[-2] = [
+                        'name' => 'Cognome',
+                        'product_id' => $product->id,
+                        'reduction_id' => 'last_name',
+                        'reduction_field_id' => -1,
+                    ];
+                }else{
+                    $productService = new ProductService($product);
+                    $fields = $productService->getReductionFields();
+
+                }
+
+                if ($product->service->site_id == $site_id) {
+                    $this->products[$product->id] = [
+                        'name' => $product->name,
+                        'check_document' => $product->check_document,
+                        'is_name' => $product->is_name,
+                        'qty' => $qty,
+                        'fields' => $fields
+                    ];
+                }
+            });
+
+        return $this->products;
+    }
+
+    public function getGroupedSlots($cart, $site_id = 1){
         $this->products = array();
 
         $cart->cart_products
         ->groupBy('product_id')
-        ->each(function($cartProductsByProduct, $productId) use($cart, $site_id){
+        ->each(function($cartProductsByProduct) use($cart, $site_id){
 
             $cartProductsByProduct->groupBy('date_service')
-            ->each(function($cartProductsByDateService, $dateService) use($cart, $site_id){
+            ->each(function($cartProductsByDateService) use($cart, $site_id){
                 $cartProductsByDateService
                 ->groupBy('hour_service')
-                ->each(function($cartProductsByHourService, $hourService) use($cart, $site_id) {
+                ->each(function($cartProductsByHourService) use($cart, $site_id) {
                     $cartProduct = $cartProductsByHourService->first();
                     $product = $cartProduct->product;
                     if($product){
@@ -87,10 +130,6 @@ class CartProductService
                     if(empty($hours)){
                         $hours = $slotService->getSlots('service_id', $product->service_id, $cartProduct->date_service, session('site_id'));
                     }
-                    $fields= array();
-
-                    $productService = new ProductService($product);
-                    $fields = $productService->getReductionFields();
 
                     $is_date = $product->is_date;
                     $is_hour = $product->is_hour;
@@ -105,22 +144,6 @@ class CartProductService
                         $is_hour = $service->is_hour;
                     }
 
-                    if($product->is_name){
-                        $fields[-1] =
-                        array(
-                            'name' => 'Nome',
-                            'product_id' => $product->id,
-                            'reduction_id' => 'first_name',
-                            'reduction_field_id' => 0,
-                        );
-                        $fields[-2] =
-                        array(
-                            'name' => 'Cognome',
-                            'product_id' => $product->id,
-                            'reduction_id' => 'last_name',
-                            'reduction_field_id' => 0,
-                        );
-                    }
                     $online_reservation_delay = (isset($product->online_reservation_delay)) ? $product->online_reservation_delay : $service->online_reservation_delay;
                     $date_start = Carbon::today()->addDays($online_reservation_delay)->format('Y-m-d');
 
@@ -130,6 +153,7 @@ class CartProductService
                             'exclude_slotcount' => $product->exclude_slotcount,
                             'is_date' => $is_date,
                             'is_hour' => $is_hour,
+                            'is_name' => $product->is_name,
                             'dateStart' => $date_start,
                             'cart_id' => $cart->id,
                             'hours' => $hours,
@@ -138,7 +162,6 @@ class CartProductService
                             'hour_service' => $cartProduct->hour_service,
                             'date_service' => $cartProduct->date_service,
                             'open_ticket' => $cartProduct->open_ticket,
-                            'fields' => $fields
                         );
                     }
 

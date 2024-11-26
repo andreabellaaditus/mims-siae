@@ -6,12 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-/**
- * @OA\Schema(
- *     schema="Order",
- *     type="object",
- * )
- */
+
 class SiaeOrder extends Model
 {
     use HasFactory;

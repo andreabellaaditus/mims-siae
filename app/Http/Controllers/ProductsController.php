@@ -22,12 +22,11 @@ use Illuminate\Http\Request;
 class ProductsController extends Controller
 {
 
-    /**
+        /**
      * @OA\Get(
      *     path="/api/sites",
      *     summary="Get all sites",
      *     tags={"Sites"},
-     *     security={ {"Authentication": {} }},
      *     @OA\Response(
      *         response=200,
      *         description="Sites retrieved successfully",
@@ -35,38 +34,7 @@ class ProductsController extends Controller
      *             type="object",
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="message", type="string", example="Sites retrieved successfully"),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="array",
-     *                 @OA\Items(
-     *                     type="object",
-     *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="pole_id", type="integer", example=1),
-     *                     @OA\Property(property="company_id", type="integer", example=1),
-     *                     @OA\Property(property="concession_id", type="integer", nullable=true, example=null),
-     *                     @OA\Property(property="unlock_matrix_pole_id", type="integer", example=3),
-     *                     @OA\Property(property="slug", type="string", example="neapolis"),
-     *                     @OA\Property(property="name", type="string", example="Parco Archeologico della Neapolis"),
-     *                     @OA\Property(property="canonical_name", type="string", example="parco-archeologico-della-neapolis"),
-     *                     @OA\Property(property="address", type="string", example="Via Paradiso, 14, 96100 Siracusa SR, Italia"),
-     *                     @OA\Property(property="city", type="string", example="Siracusa"),
-     *                     @OA\Property(property="region", type="string", example="Sicilia"),
-     *                     @OA\Property(property="lat", type="string", example="37.0741229"),
-     *                     @OA\Property(property="lng", type="string", example="15.2788834"),
-     *                     @OA\Property(property="is_comingsoon", type="boolean", example=false),
-     *                     @OA\Property(property="is_closed", type="boolean", example=false),
-     *                     @OA\Property(property="in_concession", type="boolean", example=true),
-     *                     @OA\Property(property="matrix_suffix", type="string", example="N"),
-     *                     @OA\Property(property="access_control_enabled", type="boolean", example=true),
-     *                     @OA\Property(property="poll_enabled", type="boolean", example=false),
-     *                     @OA\Property(property="cashier_fee_enabled", type="boolean", example=true),
-     *                     @OA\Property(property="tvm", type="boolean", example=false),
-     *                     @OA\Property(property="onsite_auto_scan", type="boolean", example=false),
-     *                     @OA\Property(property="created_at", type="string", format="date-time", example="2017-10-09T07:52:45.000000Z"),
-     *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-05-30T15:25:12.000000Z"),
-     *                     @OA\Property(property="cod_location_siae", type="string", nullable=true, example="1234567687894")
-     *                 )
-     *             )
+     *
      *         )
      *     ),
      *     @OA\Response(
@@ -91,69 +59,69 @@ class ProductsController extends Controller
     }
 
     /**
-         * @OA\Get(
-         *     path="/api/services/{product_category}/{site?}",
-         *     summary="Get list of active services",
-         *     tags={"Services"},
-         *     security={ {"Authentication": {} }},
-         *     @OA\Parameter(
-         *         name="product_category",
-         *         in="path",
-         *         required=true,
-         *         @OA\Schema(type="string"),
-         *         description="Slug of the product category"
-         *     ),
-         *     @OA\Parameter(
-         *         name="site",
-         *         in="path",
-         *         required=false,
-         *         @OA\Schema(type="string"),
-         *         description="Slug of the site"
-         *     ),
-         *     @OA\Response(
-         *         response=200,
-         *         description="List of services retrieved successfully",
-         *         @OA\JsonContent(
-         *             type="object",
-         *             @OA\Property(property="success", type="boolean", example=true),
-         *             @OA\Property(property="message", type="string", example="Services retrieved successfully"),
-         *             @OA\Property(
-         *                 property="data",
-         *                 type="array",
-         *                 @OA\Items(
-         *                     @OA\Property(property="id", type="integer", example=1),
-         *                     @OA\Property(property="name", type="string", example="Service Name"),
-         *                     @OA\Property(property="description", type="string", example="Service Description"),
-         *                     @OA\Property(property="site_id", type="integer", example=1),
-         *                     @OA\Property(property="slug", type="string", example="service-name"),
-         *                     @OA\Property(property="is_siae", type="boolean", example=true),
-         *                     @OA\Property(
-         *                         property="site",
-         *                         type="object",
-         *                         @OA\Property(property="id", type="integer", example=1),
-         *                         @OA\Property(property="name", type="string", example="Site Name"),
-         *                         @OA\Property(property="address", type="string", example="Site Address")
-         *                     )
-         *                 )
-         *             )
-         *         )
-         *     ),
-         *     @OA\Response(
-         *         response=500,
-         *         description="Failed to retrieve services",
-         *         @OA\JsonContent(
-         *             type="object",
-         *             @OA\Property(property="success", type="boolean", example=false),
-         *             @OA\Property(property="message", type="string", example="Failed to retrieve services: Internal Server Error")
-         *         )
-         *     )
-         * )
-         */
+     * @OA\Get(
+     *     path="/api/services/{product_category}/{site?}",
+     *     summary="Get services by product category and optionally by site",
+     *     tags={"Services"},
+     *     @OA\Parameter(
+     *         name="product_category",
+     *         in="path",
+     *         required=true,
+     *         description="Slug of the product category",
+     *         @OA\Schema(type="string", example="cultural-events")
+     *     ),
+     *     @OA\Parameter(
+     *         name="site",
+     *         in="path",
+     *         required=false,
+     *         description="Slug of the site (optional)",
+     *         @OA\Schema(type="string", example="neapolis")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Services retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Services retrieved successfully"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Guided Tour"),
+     *                     @OA\Property(property="description", type="string", example="A guided tour of the archaeological site"),
+     *                     @OA\Property(property="site_id", type="integer", example=1),
+     *                     @OA\Property(property="slug", type="string", example="guided-tour"),
+     *                     @OA\Property(property="is_siae", type="boolean", example=false),
+     *                     @OA\Property(
+     *                         property="site",
+     *                         type="object",
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="name", type="string", example="Parco Archeologico della Neapolis"),
+     *                         @OA\Property(property="address", type="string", example="Via Paradiso, 14, 96100 Siracusa SR, Italia")
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Failed to retrieve services",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Failed to retrieve services: Internal Server Error")
+     *         )
+     *     )
+     * )
+     */
+
     public function getServices($product_category_slug, $site_slug = null)
     {
         try {
             $today = date('Y-m-d H:i:s');
-
             $servicesQuery = Service::where('active', 1)
                 ->whereHas('products', function ($query) use ($today) {
                     $query->whereHas('product_validities', function ($query) use ($today) {
@@ -188,41 +156,28 @@ class ProductsController extends Controller
         }
     }
 
-
-
     /**
      * @OA\Get(
-     *     path="/api/services/{slug}/{type}/products",
-     *     summary="Get products for a specific service and type",
+     *     path="/api/services/{slug}/{is_siae}/products",
+     *     summary="Get products by service slug and siae status",
      *     tags={"Products"},
-     *     security={ {"Authentication": {} }},
      *     @OA\Parameter(
      *         name="slug",
      *         in="path",
      *         required=true,
      *         description="Slug of the service",
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Parameter(
-     *         name="type",
-     *         in="path",
-     *         required=true,
-     *         description="Type of user receiving the products (customers, travel-agencies, schools)",
-     *         @OA\Schema(type="string")
+     *         @OA\Schema(type="string", example="guided-tour")
      *     ),
      *     @OA\Parameter(
      *         name="is_siae",
-     *         in="query",
+     *         in="path",
      *         required=true,
-     *         description="Filter products based on the is_siae field. Default is 0.",
-     *         @OA\Schema(
-     *             type="integer",
-     *             example=0
-     *         )
+     *         description="SIAE status (0 or 1)",
+     *         @OA\Schema(type="integer", example=0)
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Products retrieved successfully",
+     *         description="Data retrieved successfully",
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="success", type="boolean", example=true),
@@ -234,44 +189,42 @@ class ProductsController extends Controller
      *                     property="service",
      *                     type="object",
      *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="name", type="string", example="Service Name"),
-     *                     @OA\Property(property="description", type="string", example="Service Description"),
-     *                     @OA\Property(property="slug", type="string", example="service-slug")
+     *                     @OA\Property(property="name", type="string", example="Guided Tour"),
+     *                     @OA\Property(property="description", type="string", example="A guided tour of the archaeological site"),
+     *                     @OA\Property(property="slug", type="string", example="guided-tour")
      *                 ),
      *                 @OA\Property(
      *                     property="products",
      *                     type="array",
      *                     @OA\Items(
+     *                         type="object",
      *                         @OA\Property(property="id", type="integer", example=1),
-     *                         @OA\Property(property="name", type="string", example="Product Name"),
-     *                         @OA\Property(property="price_sale", type="string", example="123.45"),
-     *                         @OA\Property(property="cod_ordine_posto", type="string", example="ABCDE"),
-     *                         @OA\Property(property="cod_riduzione_siae", type="string", example="12345"),
-     *                         @OA\Property(property="is_siae", type="integer", example=1),
-     *                         @OA\Property(
-     *                             property="reductions",
-     *                             type="array",
+     *                         @OA\Property(property="name", type="string", example="Full Guided Tour"),
+     *                         @OA\Property(property="price_sale", type="string", example="25,00"),
+     *                         @OA\Property(property="cod_ordine_posto", type="string", example="AB12345"),
+     *                         @OA\Property(property="cod_riduzione_siae", type="string", example="RID01"),
+     *                         @OA\Property(property="is_date", type="boolean", example=true),
+     *                         @OA\Property(property="is_hour", type="boolean", example=false),
+     *                         @OA\Property(property="reductions", type="array",
      *                             @OA\Items(
      *                                 @OA\Property(property="id", type="integer", example=1),
-     *                                 @OA\Property(property="name", type="string", example="Reduction Name")
+     *                                 @OA\Property(property="name", type="string", example="Student Discount")
      *                             )
      *                         ),
-     *                         @OA\Property(
-     *                             property="reduction_fields",
-     *                             type="array",
+     *                         @OA\Property(property="reduction_fields", type="array",
      *                             @OA\Items(
      *                                 @OA\Property(property="id", type="integer", example=1),
-     *                                 @OA\Property(property="name", type="string", example="Reduction Field Name"),
-     *                                 @OA\Property(property="slug", type="string", example="reduction-field-slug")
+     *                                 @OA\Property(property="name", type="string", example="Student Card"),
+     *                                 @OA\Property(property="slug", type="string", example="student-card")
      *                             )
      *                         ),
      *                         @OA\Property(
      *                             property="shows",
      *                             type="array",
      *                             @OA\Items(
-     *                                 @OA\Property(property="date_event", type="string", example="2024-07-15"),
-     *                                 @OA\Property(property="eventoId", type="string", example="ABCDE"),
-     *                                 @OA\Property(property="availability", type="integer", example=10),
+     *                                 @OA\Property(property="date_event", type="string", example="2024-10-25"),
+     *                                 @OA\Property(property="eventoId", type="string", example="EV123"),
+     *                                 @OA\Property(property="availability", type="integer", example=100),
      *                                 @OA\Property(property="product_id", type="integer", example=1)
      *                             )
      *                         )
@@ -300,7 +253,8 @@ class ProductsController extends Controller
      *     )
      * )
      */
-     public function getProducts($slug, $type, $is_siae = 0)
+
+     public function getProducts($slug, $is_siae = 0)
      {
          try {
              $service = Service::select('id', 'name', 'description', 'slug')
@@ -313,16 +267,20 @@ class ProductsController extends Controller
                      'message' => 'Service not found'
                  ], 404);
              }
-
              $today = date('Y-m-d H:i:s');
              $productsQuery = Product::with(['reductions', 'reduction_fields', 'related_products'])
-                         ->where('service_id', $service->id)
-                         ->whereHas('product_validities', function ($query) use ($today) {
-                             $query->where('start_validity', '<=', $today)
-                                 ->where('end_validity', '>=', $today);
-                         })
-                         ->whereJsonContains('sale_matrix->'.$type, ['online' => true])
-                         ->where('is_siae', $is_siae);  // Aggiungiamo questo filtro
+                          ->where('service_id', $service->id)
+                          ->whereHas('product_validities', function ($query) use ($today) {
+                              $query->where('start_validity', '<=', $today)
+                                    ->where('end_validity', '>=', $today);
+                          })
+                          ->where(function ($query) {
+                              $query->whereJsonContains('sale_matrix->schools->online', true)
+                                    ->orWhereJsonContains('sale_matrix->agencies->online', true)
+                                    ->orWhereJsonContains('sale_matrix->customers->online', true);
+                          })
+                          ->where('is_siae', $is_siae);
+
 
              $products = $productsQuery->get([
                  'id',
@@ -412,30 +370,28 @@ class ProductsController extends Controller
      }
 
 
-
     /**
      * @OA\Get(
      *     path="/api/evento/{eventoId}/ordineposto/{cod_ordine_posto}/disponibilita",
-     *     summary="Get availability of an order position for an event",
-     *     tags={"Events"},
-     *     security={ {"Authentication": {} }},
+     *     summary="Get availability of a seat by event ID and seat order code",
+     *     tags={"Disponibilita"},
      *     @OA\Parameter(
      *         name="eventoId",
      *         in="path",
      *         required=true,
-     *         description="SIAE ID of the event",
-     *         @OA\Schema(type="string")
+     *         description="ID of the event",
+     *         @OA\Schema(type="string", example="EV123")
      *     ),
      *     @OA\Parameter(
      *         name="cod_ordine_posto",
      *         in="path",
      *         required=true,
-     *         description="SIAE code of seat type ",
-     *         @OA\Schema(type="string")
+     *         description="Seat order code",
+     *         @OA\Schema(type="string", example="AB12345")
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Availability retrieved successfully",
+     *         description="Posti disponibili retrieved successfully",
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="success", type="boolean", example=true),
@@ -443,7 +399,7 @@ class ProductsController extends Controller
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(property="disponibilita", type="integer", example=10)
+     *                 @OA\Property(property="disponibilita", type="integer", example=100)
      *             )
      *         )
      *     ),

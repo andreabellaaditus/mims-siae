@@ -38,11 +38,11 @@ use Illuminate\Support\Facades\DB;
 
 class Slots extends Widget
 {
-    protected $listeners = ['refresh_dates' => 'mount', 'inputValueChanged', 'scan'];
+    protected $listeners = ['refresh_dates' => 'mount', 'scan'];
     protected static string $view = 'filament.resources.order-resource.widgets.slots';
     protected int | string | array $columnSpan = 'full';
 
-    protected static ?string $model = Cart::class;
+    //protected static ?string $model = Cart::class;
     public $products = array();
     public $document_types = array();
 
@@ -52,7 +52,7 @@ class Slots extends Widget
     public $selectedDate;
     public string $qr_code;
 
-    public function inputValueChanged($values)
+    /*public function inputValueChanged($values)
     {
         foreach ($values as $key => $value) {
             $parts = explode(".", $key);
@@ -71,12 +71,11 @@ class Slots extends Widget
         }
         session()->put('reduction_fields', $this->array_red);
         session()->put('names_data', $this->array_namesdata);
-    }
+    }*/
 
     public function mount()
     {
         $cartService = new CartService;
-
         $orderService = new OrderService;
 
         $site_id = session('site_id');
@@ -86,8 +85,9 @@ class Slots extends Widget
         $this->document_types = DocumentType::all();
         if ($cart){
             $cartProductService = new CartProductService;
-            $this->products = $cartProductService->getGroupedProducts($cart, $site_id);
+            $this->products = $cartProductService->getGroupedSlots($cart, $site_id);
         }
+        $this->dispatch('refresh_reduction_fields');
     }
 
     protected function getFormModel(): string

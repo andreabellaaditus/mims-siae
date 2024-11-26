@@ -3,166 +3,77 @@
 namespace App\Http\Controllers;
 
 use App\Services\SlotService;
-use App\Models\{ Cart, CartProduct, Product, Service, Site, SiteHour};
+use App\Models\{ User, Cart, CartProduct, Product, Service, Site, SiteHour};
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CartProduct\{ DestroyManyRequest, StoreRequest };
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+
+
 
 class CartProductController extends Controller
 {
-    public function __construct()
+    /*public function __construct()
     {
-        $this->middleware('logged-user');
-    }
+        $this->middleware('logged-user')->except('index', 'store', 'destroyMany');
+    }*/
 
-    /**
-     * @OA\Get(
-     *     path="/api/cart_products/cart",
-     *     summary="Get cart products for the authenticated user",
-     *     tags={"Cart Products"},
-     *     security={ {"Authentication": {} }},
-     *     @OA\Response(
-     *         response=200,
-     *         description="Cart products retrieved successfully",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="status", type="string", example="success"),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="array",
-     *                 @OA\Items(
-     *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="cart_id", type="integer", example=1),
-     *                     @OA\Property(property="product_id", type="integer", example=1),
-     *                     @OA\Property(property="date_service", type="string", format="date-time", example="2024-07-15 10:00:00"),
-     *                     @OA\Property(property="hour_service", type="string", example="10:00"),
-     *                     @OA\Property(property="holder_last_name", type="string", example="Doe"),
-     *                     @OA\Property(property="holder_first_name", type="string", example="John"),
-     *                     @OA\Property(property="open_ticket", type="boolean", example=true)
-     *                 )
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthorized",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="status", type="string", example="Unauthorized")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Failed to retrieve cart products",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="status", type="string", example="Internal Server Error")
-     *         )
-     *     )
-     * )
-     */
-
-    public function index()
+    public function index(Request $request)
     {
+        $cartProductsData = [];
         try {
-            $cartProducts = CartProduct::select('id', 'cart_id', 'product_id', 'date_service', 'hour_service', 'holder_last_name', 'holder_first_name', 'open_ticket')
-                ->whereHas('cart', function($query) {
-                    $query->where('user_id', auth()->user()->id);
-                })
-                ->get();
-        }
-        catch (Throwable $e) {
+            $user = User::where('email', $request->email)->first();
+            if ($user) {
+
+                $cartProducts = CartProduct::select('id', 'cart_id', 'product_id', 'date_service', 'hour_service', 'holder_last_name', 'holder_first_name', 'open_ticket')
+                    ->whereHas('cart', function($query) use ($user) {
+                        $query->where('user_id', $user->id);
+                    })
+                    ->get();
+
+                if ($cartProducts->isNotEmpty()) {
+                    $cartProductsData = $this->getCartProductsResource($cartProducts, $request->input('lang', 'it'));
+                }
+            } else {
+                $error = "User not found with the given email.";
+            }
+
+        } catch (Throwable $e) {
             $error = $e->getMessage();
         }
 
-        return collect([
+        return response()->json([
             'success' => !isset($error),
             'status' => $error ?? 'success',
-            'data' => isset($cartProducts) ? $this->getCartProductsResource($cartProducts, request('lang')) : []
+            'data' => $cartProductsData
         ]);
     }
 
 
-    /**
-     * @OA\Post(
-     *     path="/api/cart_products/store",
-     *     summary="Store cart products for the authenticated user",
-     *     tags={"Cart Products"},
-     *     security={ {"Authentication": {} }},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="products", type="array",
-     *                 @OA\Items(
-     *                     type="object",
-     *                     @OA\Property(property="product_id", type="integer", example=1),
-     *                     @OA\Property(property="date_service", type="string", format="date-time", example="2024-07-15 10:00:00"),
-     *                     @OA\Property(property="hour_service", type="string", example="10:00"),
-     *                     @OA\Property(property="holder_last_name", type="string", example="Doe"),
-     *                     @OA\Property(property="holder_first_name", type="string", example="John"),
-     *                     @OA\Property(property="open_ticket", type="boolean", example=true)
-     *                 )
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Cart products stored successfully",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="status", type="string", example="success"),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="array",
-     *                 @OA\Items(
-     *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="product_id", type="integer", example=1),
-     *                     @OA\Property(property="date_service", type="string", format="date-time", example="2024-07-15 10:00:00"),
-     *                     @OA\Property(property="hour_service", type="string", example="10:00"),
-     *                     @OA\Property(property="holder_last_name", type="string", example="Doe"),
-     *                     @OA\Property(property="holder_first_name", type="string", example="John"),
-     *                     @OA\Property(property="open_ticket", type="boolean", example=true)
-     *                 )
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthorized",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="status", type="string", example="Unauthorized")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Failed to store cart products",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="status", type="string", example="Internal Server Error")
-     *         )
-     *     )
-     * )
-     */
-    public function store(StoreRequest $request)
-    {
-        try {
-            $cartProducts = null;
-            DB::transaction(function () use ($request, &$cartProducts) {
-                $cart = Cart::firstOrCreate(['user_id' => auth()->user()->id]);
 
-                // Check if products is a JSON string or already an array
-                $products = is_string($request->products) ? json_decode($request->products) : $request->products;
+    /*$apiUrl = env('MIMS_API_URL') . '/v3/cart_products/index';
+    $response = Http::get($apiUrl);
+
+    if ($response->successful()) {
+        return $response->json();
+    } else {
+        $error = $response->body();
+    }*/
+     public function store(StoreRequest $request)
+     {
+        $cartProducts = null;
+        $error = null;
+        $user = User::where('email', $request->email)->first();
+
+        try {
+
+            DB::transaction(function () use ($request, &$cartProducts, $user) {
+                $cart = Cart::firstOrCreate(['user_id' => $user->id]);
+                $products = is_string($request->products) ? json_decode($request->products, true) : $request->products;
                 collect($products)
                     ->each(function($product) use ($cart) {
                         CartProduct::create([
@@ -176,13 +87,13 @@ class CartProductController extends Controller
                         ]);
                     });
 
-                    $cartProducts = CartProduct::select('id', 'product_id', 'date_service', 'hour_service', 'holder_last_name', 'holder_first_name', 'open_ticket')
+                $cartProducts = CartProduct::select('id', 'product_id', 'date_service', 'hour_service', 'holder_last_name', 'holder_first_name', 'open_ticket')
                     ->where('cart_id', $cart->id)
                     ->get();
             });
-        }
-        catch (Throwable $e) {
-            $error = $e->getMessage().$e->getFile().$e->getLine();
+
+        } catch (Throwable $e) {
+            $error = $e->getMessage() . $e->getFile() . $e->getLine();
         }
 
         return collect([
@@ -190,7 +101,8 @@ class CartProductController extends Controller
             'status' => $error ?? 'success',
             'data' => isset($cartProducts) ? $this->getCartProductsResource($cartProducts, request('lang')) : false
         ]);
-    }
+     }
+
 
     public function store_card_holders(Request $request)
     {
@@ -223,58 +135,6 @@ class CartProductController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/cart_products/{cartProductId}/destroy",
-     *     summary="Delete a cart product",
-     *     tags={"Cart Products"},
-     *     security={ {"Authentication": {} }},
-     *     @OA\Parameter(
-     *         name="cartProductId",
-     *         in="path",
-     *         required=true,
-     *         description="ID of the cart product to delete",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Cart product deleted successfully",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="status", type="string", example="success")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthorized",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="status", type="string", example="Unauthorized")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Cart product not found",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="status", type="string", example="Cart product not found")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Failed to delete cart product",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="status", type="string", example="Internal Server Error")
-     *         )
-     *     )
-     * )
-     */
-
     public function destroy($id)
     {
         try {
@@ -297,75 +157,43 @@ class CartProductController extends Controller
             'status' => $error ?? 'success'
         ]);
     }
-
-    /**
-     * @OA\Post(
-     *     path="/api/cart_products/destroy-many",
-     *     summary="Delete multiple cart products",
-     *     tags={"Cart Products"},
-     *     security={ {"Authentication": {} }},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="ids", type="array",
-     *                 @OA\Items(type="integer")
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Cart products deleted successfully",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="status", type="string", example="success")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthorized",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="status", type="string", example="Unauthorized")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Failed to delete cart products",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="status", type="string", example="Internal Server Error")
-     *         )
-     *     )
-     * )
-     */
     public function destroyMany(DestroyManyRequest $request)
     {
+
         try {
-            $cart_products = CartProduct::when($request->ids, function($query) use ($request) {
-                return $query->whereIn('id', json_decode($request->ids));
-            })
-            ->whereHas('cart', function($query) {
-                $query->where('user_id', auth()->user()->id);
-            })
-            ->delete();
 
-            $cart = Cart::where('user_id',auth()->user()->id)->first();
+            $cart_products = CartProduct::when($request->ids, function ($query) use ($request) {
+                $ids = array_column($request->ids, 'id');
+                return $query->whereIn('id', $ids);
+            })
+            ->get();
 
-            if ($cart->cart_products->count() == 0){
-                $cart->delete();
+            $deletedCount = $cart_products->count();
+
+            if ($deletedCount > 0) {
+                CartProduct::destroy($cart_products->pluck('id'));
             }
-        }
-        catch (Throwable $e) {
-            $error = $e->getMessage();
+
+            $cartId = $deletedCount > 0 ? $cart_products->first()->cart_id : null;
+
+            if ($cartId) {
+                $cart = Cart::find($cartId);
+
+                if ($cart && $cart->cart_products->count() == 0) {
+                    $cart->delete();
+                }
+            }
+        } catch (Throwable $e) {
+            Log::error('Errore nella funzione destroyMany:', [
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+            ]);
         }
 
         return collect([
-            'success' => !isset($error),
-            'status' => $error ?? 'success'
+            'success' => true,
+            'status' => 'success'
         ]);
     }
 
@@ -374,7 +202,7 @@ class CartProductController extends Controller
     {
         $cartProducts->load([
             'product' => function ($productQuery) {
-                $productQuery->select('id', 'service_id', 'name', 'price_sale', 'price_web', 'is_card', 'is_name', 'check_document')
+                $productQuery->select('id', 'service_id', 'name', 'price_sale', 'price_web', 'is_card', 'is_name', 'check_document', 'is_siae')
                     ->with([
                         'service' => function ($serviceQuery) {
                             $serviceQuery->select('id', 'product_category_id', 'site_id', 'max_pax', 'min_pax', 'slug')
@@ -410,8 +238,10 @@ class CartProductController extends Controller
 
         $productResource = [
             'id' => $cartProduct->id,
+            'is_siae' => $product->is_siae,
             'date_service' => $dateService,
             'hour_service' => $hourService,
+            'free_slot' => $cartProduct->open_ticket,
             'holder_first_name' => $cartProduct->holder_first_name,
             'holder_last_name' => $cartProduct->holder_last_name,
             'product' => isset($product) ? $this->getProductResource($product, $slot, $serviceAvailability, $lang) : false
@@ -584,18 +414,26 @@ class CartProductController extends Controller
                                     $cartProductsByHourService
                                         ->groupBy('open_ticket')
                                         ->each(function ($cartProductsByFreeSlot, $freeSlot) use(&$serviceAvailability, $serviceId, $dateService, $hourService) {
-                                            if (!$freeSlot){
+                                            if (!$freeSlot) {
                                                 $service = $cartProductsByFreeSlot->first()->product->service;
                                                 $product = $cartProductsByFreeSlot->first()->product;
+
+                                                // Verifica se $dateService e $hourService sono null o vuoti, in tal caso usa la data e ora attuali
+                                                $dateService = !empty($dateService) ? $dateService : Carbon::now()->format('Y-m-d');
+                                                $hourService = !empty($hourService) ? $hourService : Carbon::now()->format('H:i:s');
+
                                                 $slot = Carbon::createFromFormat('Y-m-d H:i:s', $dateService.' '.$hourService);
 
                                                 $slotService = new SlotService();
                                                 $serviceAvailability[$serviceId][$dateService.' '.$hourService] = $slotService->checkAvailability('product_id', $product->id, $slot->format('Y-m-d'), $slot->format('H:i:s'), $service->site_id);
-                                                if(empty($serviceAvailability)){
+
+                                                // Controllo di fallback per la disponibilità del servizio
+                                                if (empty($serviceAvailability)) {
                                                     $serviceAvailability[$serviceId][$dateService.' '.$hourService] = $slotService->checkAvailability('service_id', $service->id, $slot->format('Y-m-d'), $slot->format('H:i:s'), $service->site_id);
-                                                //$serviceAvailability[$serviceId][$dateService.' '.$hourService] = $service->getSlotAvailability($slot);
+                                                    // $serviceAvailability[$serviceId][$dateService.' '.$hourService] = $service->getSlotAvailability($slot);
                                                 }
                                             }
+
                                         });
                                 });
                         });

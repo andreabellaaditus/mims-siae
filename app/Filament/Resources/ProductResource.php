@@ -591,7 +591,7 @@ class ProductResource extends Resource
                     $vss = $record->virtual_store_settings->replicate()->toArray();
                     $vss['product_id'] = $replica->id;
                     VirtualStoreSetting::create($vss);
-
+                    redirect()->to(ProductResource::getUrl('edit', ['record' => $replica->id]));
                 }),
 
                 Tables\Actions\EditAction::make()->iconButton()->size(ActionSize::Large),

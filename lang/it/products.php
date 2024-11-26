@@ -66,7 +66,7 @@
             'online_reservation_delay' => 'Dopo quanti giorni è possibile prenotare?',
             'check_document' => 'Controllo Documento',
             'reductions' => 'Riduzioni Associate',
-            'reduction_fields' => 'Campi da Indicare',
+            'reduction_fields' => 'Campi di riduzione da compilare',
             'has_supplier' => 'Richiede Fornitore',
             'supplier_id' => 'Fornitore',
             'validity_from_issue_unit' => 'Unità di validità dall\'emissione',
